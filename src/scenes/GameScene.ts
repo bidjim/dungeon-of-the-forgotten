@@ -1,10 +1,11 @@
 import Phaser from "phaser";
 import { Player } from "../Player";
+import { Joystick } from "../types/joystick";
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private joystick!: any; // RexUI virtual joystick
+  private joystick!: Joystick;
 
   constructor() {
     super("GameScene");

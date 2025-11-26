@@ -1,9 +1,10 @@
 // src/Player.ts
 import Phaser from "phaser";
+import { Joystick } from "./types/joystick";
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  private joystick: any; // RexUI virtual joystick
+  private joystick: Joystick;
   private playerSpeed: number = 160;
 
   constructor(
@@ -12,7 +13,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     y: number,
     texture: string,
     cursors: Phaser.Types.Input.Keyboard.CursorKeys,
-    joystick: any,
+    joystick: Joystick,
     frame?: string | number
   ) {
     super(scene, x, y, texture, frame);
