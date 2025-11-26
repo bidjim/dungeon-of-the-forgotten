@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "phaser": "^3.90.0",
+    "phaser3-rex-plugins": "^1.80.17",
     "typescript": "^5.9.3",
     "vite": "^7.2.4"
   }

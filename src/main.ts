@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { GameScene } from "./scenes/GameScene";
+import VirtualJoystickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-plugin.js";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -14,6 +15,15 @@ const config: Phaser.Types.Core.GameConfig = {
   },
   scene: [BootScene, GameScene],
   pixelArt: true,
+  plugins: {
+    global: [
+      {
+        key: "rexVirtualJoystick",
+        plugin: VirtualJoystickPlugin,
+        start: true,
+      },
+    ],
+  },
 };
 
 const game = new Phaser.Game(config);
