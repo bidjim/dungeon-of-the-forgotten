@@ -32,7 +32,7 @@ export class GameScene extends Phaser.Scene {
       this,
       100,
       450,
-      "knight_idle",
+      "knight",
       this.cursors,
       this.joystick
     );
