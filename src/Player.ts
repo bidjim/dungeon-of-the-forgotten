@@ -45,24 +45,37 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     } else {
       // Keyboard input
+      let xInput = 0;
+      let yInput = 0;
+
       // Horizontal movement
       if (this.cursors.left.isDown) {
-        playerVelocityX = -this.playerSpeed;
+        xInput = -1;
         this.flipX = true; // Flip sprite to face left
         isMoving = true;
       } else if (this.cursors.right.isDown) {
-        playerVelocityX = this.playerSpeed;
+        xInput = 1;
         this.flipX = false; // Face right
         isMoving = true;
       }
 
       // Vertical movement
       if (this.cursors.up.isDown) {
-        playerVelocityY = -this.playerSpeed;
+        yInput = -1;
         isMoving = true;
       } else if (this.cursors.down.isDown) {
-        playerVelocityY = this.playerSpeed;
+        yInput = 1;
         isMoving = true;
+      }
+
+      // Normalize diagonal movement
+      if (xInput !== 0 && yInput !== 0) {
+        const diagonalFactor = 1 / Math.sqrt(2);
+        playerVelocityX = xInput * this.playerSpeed * diagonalFactor;
+        playerVelocityY = yInput * this.playerSpeed * diagonalFactor;
+      } else {
+        playerVelocityX = xInput * this.playerSpeed;
+        playerVelocityY = yInput * this.playerSpeed;
       }
     }
 
