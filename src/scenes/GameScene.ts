@@ -2,11 +2,7 @@ import { ASSET_KEYS } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { Joystick } from "../types/joystick";
-import {
-  JOYSTICK_PROPERTIES,
-  createJoystickCircleGameObjects,
-} from "../config/joystickConfig";
-// ... (other imports)
+import { createJoystickConfig } from "../config/joystickConfig";
 
 export class GameScene extends Phaser.Scene {
   player!: Player;
@@ -20,12 +16,7 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.cursors = this.input.keyboard!.createCursorKeys();
 
-    const { base, thumb } = createJoystickCircleGameObjects(this);
-    const joystickConfig = {
-      ...JOYSTICK_PROPERTIES,
-      base: base,
-      thumb: thumb,
-    };
+    const joystickConfig = createJoystickConfig(this);
     this.joystick = (this.plugins.get("rexVirtualJoystick") as any).add(
       this,
       joystickConfig
