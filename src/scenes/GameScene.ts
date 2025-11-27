@@ -38,7 +38,7 @@ export class GameScene extends Phaser.Scene {
       this.cursors,
       this.joystick
     );
-    // this.cameras.main.startFollow(this.player); // Pending until map generation
+    // this.cameras.main.startFollow(this.player); // TODO: Enable camera follow once map generation is implemented
   }
 
   update() {
