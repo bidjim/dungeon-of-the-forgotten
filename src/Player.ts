@@ -1,6 +1,7 @@
 // src/Player.ts
 import Phaser from "phaser";
 import { Joystick } from "./types/joystick";
+import { ANIM_KEYS } from "./constants";
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -85,9 +86,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Animation control
     if (isMoving) {
-      this.anims.play("knight_run", true);
+      this.anims.play(ANIM_KEYS.KNIGHT_RUN, true);
     } else {
-      this.anims.play("knight_idle", true);
+      this.anims.play(ANIM_KEYS.KNIGHT_IDLE, true);
     }
   }
 }

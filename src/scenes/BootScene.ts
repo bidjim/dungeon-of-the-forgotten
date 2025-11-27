@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { ASSET_KEYS, ASSET_PATHS } from "../constants";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -6,11 +7,11 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet("dungeon_tiles", "assets/tileset.png", {
+    this.load.spritesheet(ASSET_KEYS.DUNGEON_TILES, ASSET_PATHS.DUNGEON_TILES, {
       frameWidth: 16,
       frameHeight: 16,
     });
-    this.load.spritesheet("knight", "assets/knight.png", {
+    this.load.spritesheet(ASSET_KEYS.KNIGHT, ASSET_PATHS.KNIGHT, {
       frameWidth: 16,
       frameHeight: 24,
     });
@@ -20,14 +21,20 @@ export class BootScene extends Phaser.Scene {
     // Create animations for the knight
     this.anims.create({
       key: "knight_idle",
-      frames: this.anims.generateFrameNumbers("knight", { start: 0, end: 3 }),
+      frames: this.anims.generateFrameNumbers(ASSET_KEYS.KNIGHT, {
+        start: 0,
+        end: 3,
+      }),
       frameRate: 8,
       repeat: -1,
     });
 
     this.anims.create({
       key: "knight_run",
-      frames: this.anims.generateFrameNumbers("knight", { start: 11, end: 14 }),
+      frames: this.anims.generateFrameNumbers(ASSET_KEYS.KNIGHT, {
+        start: 11,
+        end: 14,
+      }),
       frameRate: 8,
       repeat: -1,
     });
