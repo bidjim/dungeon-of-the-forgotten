@@ -3,11 +3,19 @@ import Phaser from "phaser";
 import { Player } from "../Player";
 import { Joystick } from "../types/joystick";
 import { createJoystickConfig } from "../config/joystickConfig";
+import { MapGenerator } from "../MapGenerator"; // Import MapGenerator
+
+// Define map dimensions
+const MAP_WIDTH = 50; // In tiles
+const MAP_HEIGHT = 50; // In tiles
+const TILE_SIZE = 16; // In pixels
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private joystick!: Joystick;
+  private map!: Phaser.Tilemaps.Tilemap;
+  private groundLayer!: Phaser.Tilemaps.TilemapLayer;
 
   constructor() {
     super("GameScene");
@@ -22,15 +30,69 @@ export class GameScene extends Phaser.Scene {
       joystickConfig
     );
     this.joystick.setScrollFactor(0); // Make joystick fixed on screen
+
+    // --- Map Generation ---
+    const mapGenerator = new MapGenerator(MAP_WIDTH, MAP_HEIGHT); // Updated constructor call
+    const mapData = mapGenerator.generateMap(); // Get raw map data
+
+    // Create a Phaser Tilemap from the generated data
+    this.map = this.make.tilemap({
+      data: mapData,
+      tileWidth: TILE_SIZE,
+      tileHeight: TILE_SIZE,
+    });
+
+    // Add tileset image to the map
+    // The first parameter is the name you gave to the tileset in Tiled (can be arbitrary)
+    // The second parameter is the key of the tileset image you loaded in BootScene
+    const tileset = this.map.addTilesetImage(
+      "dungeon_tiles",
+      ASSET_KEYS.DUNGEON_TILES
+    ); // "dungeon_tiles" is an arbitrary name for the tileset within the map
+
+    // Ensure the tileset was loaded correctly
+    if (!tileset) {
+      throw new Error(
+        "Failed to load dungeon tileset. Check ASSET_KEYS.DUNGEON_TILES and ensure 'assets/tileset.png' exists."
+      );
+    }
+
+    // Create the ground layer directly from the map data
+    this.groundLayer = this.map.createLayer(0, tileset)!; // Use layer index 0, as there's only one layer
+
+    // Set collision for tiles with index 33 (walls)
+    this.groundLayer.setCollision(33); // Assuming 33 is a wall tile
+
+    // Scale the layer if needed (e.g., for pixel art games)
+    this.groundLayer.setScale(1);
+
+    // Set world bounds to the map dimensions
+    this.physics.world.bounds.width = this.map.widthInPixels;
+    this.physics.world.bounds.height = this.map.heightInPixels;
+
+    // --- Player Creation ---
+    // Place the player in the center of the map initially
+    const playerStartX = (MAP_WIDTH / 2) * TILE_SIZE;
+    const playerStartY = (MAP_HEIGHT / 2) * TILE_SIZE;
+
     this.player = new Player(
       this,
-      100,
-      450,
+      playerStartX,
+      playerStartY,
       ASSET_KEYS.KNIGHT,
       this.cursors,
       this.joystick
     );
-    // this.cameras.main.startFollow(this.player); // TODO: Enable camera follow once map generation is implemented
+    this.physics.add.collider(this.player, this.groundLayer); // Add player-map collision
+
+    // --- Camera Setup ---
+    this.cameras.main.startFollow(this.player);
+    this.cameras.main.setBounds(
+      0,
+      0,
+      this.map.widthInPixels,
+      this.map.heightInPixels
+    );
   }
 
   update() {
