@@ -2,32 +2,29 @@ import { ASSET_KEYS } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { Joystick } from "../types/joystick";
+import {
+  JOYSTICK_PROPERTIES,
+  createJoystickCircleGameObjects,
+} from "../config/joystickConfig";
+// ... (other imports)
 
 export class GameScene extends Phaser.Scene {
-  private player!: Player;
-  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private joystick!: Joystick;
+  player!: Player;
+  cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  joystick!: Joystick;
 
   constructor() {
     super("GameScene");
   }
 
-  preload() {
-    // Assets are loaded in BootScene
-  }
-
   create() {
     this.cursors = this.input.keyboard!.createCursorKeys();
+
+    const { base, thumb } = createJoystickCircleGameObjects(this);
     const joystickConfig = {
-      x: 100,
-      y: 500,
-      radius: 50,
-      base: this.add.circle(0, 0, 70, 0x888888, 0.5),
-      thumb: this.add.circle(0, 0, 30, 0xcccccc, 1),
-      dir: "8dir",
-      forceMin: 16,
-      fixed: true,
-      enable: true,
+      ...JOYSTICK_PROPERTIES,
+      base: base,
+      thumb: thumb,
     };
     this.joystick = (this.plugins.get("rexVirtualJoystick") as any).add(
       this,
