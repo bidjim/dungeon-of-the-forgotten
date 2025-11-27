@@ -17,7 +17,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.joystick = (this.plugins.get("rexVirtualJoystick") as any).add(this, {
+    const joystickConfig = {
       x: 100,
       y: 500,
       radius: 50,
@@ -27,7 +27,8 @@ export class GameScene extends Phaser.Scene {
       forceMin: 16,
       fixed: true,
       enable: true,
-    });
+    };
+    this.joystick = (this.plugins.get("rexVirtualJoystick") as any).add(this, joystickConfig);
     this.joystick.setScrollFactor(0); // Make joystick fixed on screen
     this.player = new Player(
       this,
