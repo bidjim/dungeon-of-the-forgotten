@@ -1,35 +1,9 @@
 // src/MapGenerator.ts
 
 import Phaser from "phaser";
+import { Rectangle, Room } from "./types/map";
 
-// Helper interface for a rectangular area
-interface Rectangle {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-// Helper interface for a room
-interface Room extends Rectangle {
-  // Rooms might have additional properties later, e.g., doors, contents
-}
-
-// Represents a node in the Binary Space Partitioning tree
-class BSPNode {
-  public rectangle: Rectangle;
-  public leftChild: BSPNode | null = null;
-  public rightChild: BSPNode | null = null;
-  public room: Room | null = null; // A leaf node might contain a room
-
-  constructor(rect: Rectangle) {
-    this.rectangle = rect;
-  }
-
-  isLeaf(): boolean {
-    return this.leftChild === null && this.rightChild === null;
-  }
-}
+import { BSPNode } from "./map/BSPNode";
 
 export class MapGenerator {
   private width: number;
