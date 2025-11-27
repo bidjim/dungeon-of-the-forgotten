@@ -5,9 +5,9 @@ import { Joystick } from "../types/joystick";
 import { createJoystickConfig } from "../config/joystickConfig";
 
 export class GameScene extends Phaser.Scene {
-  player!: Player;
-  cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  joystick!: Joystick;
+  private player!: Player;
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private joystick!: Joystick;
 
   constructor() {
     super("GameScene");
