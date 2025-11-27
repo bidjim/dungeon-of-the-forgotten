@@ -1,3 +1,4 @@
+import { ASSET_KEYS } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { Joystick } from "../types/joystick";
@@ -28,13 +29,16 @@ export class GameScene extends Phaser.Scene {
       fixed: true,
       enable: true,
     };
-    this.joystick = (this.plugins.get("rexVirtualJoystick") as any).add(this, joystickConfig);
+    this.joystick = (this.plugins.get("rexVirtualJoystick") as any).add(
+      this,
+      joystickConfig
+    );
     this.joystick.setScrollFactor(0); // Make joystick fixed on screen
     this.player = new Player(
       this,
       100,
       450,
-      "knight",
+      ASSET_KEYS.KNIGHT,
       this.cursors,
       this.joystick
     );
