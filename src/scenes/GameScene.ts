@@ -3,7 +3,6 @@ import Phaser from "phaser";
 import { Player } from "../Player";
 import { Joystick } from "../types/joystick";
 import { createJoystickConfig } from "../config/joystickConfig";
-import { BSPMapGenerator } from "../map/BSPMapGenerator";
 
 // Define map dimensions
 const MAP_WIDTH = 50; // In tiles
@@ -31,24 +30,15 @@ export class GameScene extends Phaser.Scene {
     );
     this.joystick.setScrollFactor(0); // Make joystick fixed on screen
 
-    // --- Map Generation ---
-    const mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT); // Updated constructor call
-    const mapData = mapGenerator.generate(); // Get raw map data
+    // Create the map object
+    this.map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
 
-    // Create a Phaser Tilemap from the generated data
-    this.map = this.make.tilemap({
-      data: mapData,
-      tileWidth: TILE_SIZE,
-      tileHeight: TILE_SIZE,
-    });
-
-    // Add tileset image to the map
-    // The first parameter is the name you gave to the tileset in Tiled (can be arbitrary)
-    // The second parameter is the key of the tileset image you loaded in BootScene
+    // First arg: The name of the tileset INSIDE Tiled (right-side panel in Tiled)
+    // Second arg: The key of the image loaded in preload()
     const tileset = this.map.addTilesetImage(
-      "dungeon_tiles",
+      ASSET_KEYS.TILESET,
       ASSET_KEYS.DUNGEON_TILES
-    ); // "dungeon_tiles" is an arbitrary name for the tileset within the map
+    );
 
     // Ensure the tileset was loaded correctly
     if (!tileset) {
@@ -58,7 +48,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Create the ground layer directly from the map data
-    this.groundLayer = this.map.createLayer(0, tileset)!; // Use layer index 0, as there's only one layer
+    this.groundLayer = this.map.createLayer("Tile Layer 1", tileset, 0, 0)!;
+    this.groundLayer.replaceByIndex(-1, 0);
 
     // Set collision for tiles with index 0 (walls)
     this.groundLayer.setCollision(0);
@@ -72,8 +63,8 @@ export class GameScene extends Phaser.Scene {
 
     // --- Player Creation ---
     // Place the player in the center of the map initially
-    const playerStartX = (MAP_WIDTH / 2) * TILE_SIZE;
-    const playerStartY = (MAP_HEIGHT / 2) * TILE_SIZE;
+    const playerStartX = 0;
+    const playerStartY = 0;
 
     this.player = new Player(
       this,

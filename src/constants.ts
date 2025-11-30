@@ -1,10 +1,12 @@
 export const ASSET_KEYS = {
   DUNGEON_TILES: "dungeon_tiles",
   KNIGHT: "knight",
+  TILESET: "tileset",
 };
 
 export const ASSET_PATHS = {
   DUNGEON_TILES: "assets/tileset.png",
+  DUNGEON_JSON: "assets/tileset.tmj",
   KNIGHT: "assets/knight.png",
 };
 

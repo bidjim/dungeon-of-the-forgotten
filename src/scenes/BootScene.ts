@@ -7,10 +7,11 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet(ASSET_KEYS.DUNGEON_TILES, ASSET_PATHS.DUNGEON_TILES, {
-      frameWidth: 16,
-      frameHeight: 16,
-    });
+    this.load.image(ASSET_KEYS.DUNGEON_TILES, ASSET_PATHS.DUNGEON_TILES);
+    this.load.tilemapTiledJSON(
+      ASSET_KEYS.DUNGEON_TILES,
+      ASSET_PATHS.DUNGEON_JSON
+    );
     this.load.spritesheet(ASSET_KEYS.KNIGHT, ASSET_PATHS.KNIGHT, {
       frameWidth: 16,
       frameHeight: 24,
