@@ -1,4 +1,4 @@
-import { ASSET_KEYS } from "../constants";
+import { ASSET_KEYS, FLOOR_KEYS, WALL_KEYS } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
@@ -38,7 +38,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Create the ground layer directly from the map data
-    const floorLayer = map.createLayer("Tile Layer 1", tileset, 0, 0)!;
+    const floorLayer = map.createLayer("Floor", tileset, 0, 0)!;
     floorLayer.replaceByIndex(-1, 0);
 
     // Set collision for tiles with index 0 (walls)
@@ -49,17 +49,22 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.bounds.height = map.heightInPixels;
 
     const wallUpperLayer = map.createBlankLayer("Wall Upper", tileset, 0, 0)!;
+    const wallLowerLayer = map.createBlankLayer("Wall Lower", tileset, 0, 0)!;
+    wallLowerLayer.setDepth(1);
     floorLayer.forEachTile((tile) => {
-      if (tile.index === 130) {
+      if (tile.index === FLOOR_KEYS) {
         if (floorLayer.getTileAt(tile.x, tile.y - 1).index === 0) {
-          wallUpperLayer.putTileAt(35, tile.x, tile.y - 1);
+          wallUpperLayer.putTileAt(WALL_KEYS.WE, tile.x, tile.y - 1);
+        }
+        if (floorLayer.getTileAt(tile.x, tile.y + 1).index === 0) {
+          wallLowerLayer.putTileAt(WALL_KEYS.WE, tile.x, tile.y);
         }
       }
     });
 
     // --- Player Creation ---
-    const playerStartX = Math.floor(map.widthInPixels / 2);
-    const playerStartY = Math.floor(map.heightInPixels / 2);
+    const playerStartX = map.tileWidth * 2;
+    const playerStartY = map.tileHeight * 8;
 
     this.player = new Player(
       this,
