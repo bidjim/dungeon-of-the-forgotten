@@ -3,7 +3,7 @@ import Phaser from "phaser";
 import { Player } from "../Player";
 import { Joystick } from "../types/joystick";
 import { createJoystickConfig } from "../config/joystickConfig";
-import { MapGenerator } from "../MapGenerator"; // Import MapGenerator
+import { BSPMapGenerator } from "../map/BSPMapGenerator";
 
 // Define map dimensions
 const MAP_WIDTH = 50; // In tiles
@@ -32,8 +32,8 @@ export class GameScene extends Phaser.Scene {
     this.joystick.setScrollFactor(0); // Make joystick fixed on screen
 
     // --- Map Generation ---
-    const mapGenerator = new MapGenerator(MAP_WIDTH, MAP_HEIGHT); // Updated constructor call
-    const mapData = mapGenerator.generateMap(); // Get raw map data
+    const mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT); // Updated constructor call
+    const mapData = mapGenerator.generate(); // Get raw map data
 
     // Create a Phaser Tilemap from the generated data
     this.map = this.make.tilemap({
@@ -60,8 +60,8 @@ export class GameScene extends Phaser.Scene {
     // Create the ground layer directly from the map data
     this.groundLayer = this.map.createLayer(0, tileset)!; // Use layer index 0, as there's only one layer
 
-    // Set collision for tiles with index 33 (walls)
-    this.groundLayer.setCollision(33); // Assuming 33 is a wall tile
+    // Set collision for tiles with index 0 (walls)
+    this.groundLayer.setCollision(0);
 
     // Scale the layer if needed (e.g., for pixel art games)
     this.groundLayer.setScale(1);
