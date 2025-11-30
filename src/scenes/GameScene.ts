@@ -62,7 +62,14 @@ export class GameScene extends Phaser.Scene {
       0
     )!;
     const wallLowerLayer = map.createBlankLayer("Wall Lower", tileset, 0, 0)!;
+    const wallTopLowerLayer = map.createBlankLayer(
+      "Wall Top Lower",
+      tileset,
+      0,
+      0
+    )!;
     wallLowerLayer.setDepth(1);
+    wallTopLowerLayer.setDepth(1);
     floorLayer.forEachTile((tile) => {
       if (tile.index === FLOOR_KEYS) {
         // Floor north is wall
@@ -120,6 +127,23 @@ export class GameScene extends Phaser.Scene {
         // Floor south is wall
         if (floorLayer.getTileAt(tile.x, tile.y + 1).index === 0) {
           wallLowerLayer.putTileAt(WALL_KEYS.WE, tile.x, tile.y);
+          if (
+            floorLayer.getTileAt(tile.x - 1, tile.y - 1).index === FLOOR_KEYS &&
+            floorLayer.getTileAt(tile.x - 1, tile.y).index != FLOOR_KEYS
+          ) {
+            wallTopLowerLayer.putTileAt(
+              WALL_TOP_KEYS.BOTTOM_LEFT_LONG,
+              tile.x,
+              tile.y - 1
+            );
+            wallTopLowerLayer.putTileAt(
+              WALL_TOP_KEYS.BOTTOM_LEFT_DOT,
+              tile.x,
+              tile.y - 2
+            );
+          } else {
+            wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.E, tile.x, tile.y - 1);
+          }
         }
       }
     });
