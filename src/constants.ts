@@ -1,3 +1,5 @@
+import { LEFT, RIGHT } from "phaser";
+
 export const ASSET_KEYS = {
   DUNGEON_TILES: "dungeon_tiles",
   KNIGHT: "knight",
@@ -21,4 +23,18 @@ export const WALL_KEYS = {
   E: 18,
   WE: 19,
   W: 20,
+};
+
+export const WALL_TOP_KEYS = {
+  E: 2,
+  WE: 3,
+  W: 4,
+  BOTTOM_RIGHT_LONG: 117,
+  BOTTOM_RIGHT_DOT: 114,
+  BOTTOM_LEFT_DOT: 116,
+};
+
+export const SIDE_WALL_KEYS = {
+  RIGHT: 146,
+  LEFT: 148,
 };
