@@ -1,4 +1,3 @@
-// src/Player.ts
 import Phaser from "phaser";
 import { Joystick } from "./types/joystick";
 import { ANIM_KEYS } from "./constants";
@@ -7,6 +6,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private joystick: Joystick;
   private playerSpeed: number = 160;
+
+  // Public property to access the damage hitbox from the Scene
+  public hurtbox: Phaser.GameObjects.Zone;
 
   constructor(
     scene: Phaser.Scene,
@@ -25,9 +27,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.cursors = cursors;
     this.joystick = joystick;
+
+    // --- RESIZE MAIN BODY (THE FEET) ---
+    // We cast to Arcade.Body to get TypeScript support for setSize/setOffset
+    const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Set the physics body to be the full width, but only bottom 25% height
+    body.setSize(this.width, this.height * 0.25);
+
+    // Push the offset down so the body sits at the feet
+    // (x offset, y offset)
+    body.setOffset(0, this.height * 0.75);
+
+    // --- CREATE HURTBOX (FULL BODY) ---
+    // Create a Zone (invisible entity) at the player's position with full size
+    this.hurtbox = scene.add.zone(this.x, this.y, this.width, this.height);
+    scene.physics.add.existing(this.hurtbox);
+
+    const hurtboxBody = this.hurtbox.body as Phaser.Physics.Arcade.Body;
+    hurtboxBody.moves = false; // Important: Don't let gravity pull the hurtbox down
   }
 
   update() {
+    // --- SYNC HURTBOX POSITION ---
+    // Ensure the hurtbox always follows the player perfectly
+    this.hurtbox.setPosition(this.x, this.y);
+
     let playerVelocityX = 0;
     let playerVelocityY = 0;
     let isMoving = false;
@@ -53,11 +78,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // Horizontal movement
       if (this.cursors.left.isDown) {
         xInput = -1;
-        this.flipX = true; // Flip sprite to face left
+        this.flipX = true;
         isMoving = true;
       } else if (this.cursors.right.isDown) {
         xInput = 1;
-        this.flipX = false; // Face right
+        this.flipX = false;
         isMoving = true;
       }
 
@@ -90,5 +115,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.anims.play(ANIM_KEYS.KNIGHT_IDLE, true);
     }
+  }
+
+  destroy(fromScene?: boolean) {
+    // Clean up hurtbox if player is destroyed
+    if (this.hurtbox) {
+      this.hurtbox.destroy();
+    }
+    super.destroy(fromScene);
   }
 }

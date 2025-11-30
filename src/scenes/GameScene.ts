@@ -39,7 +39,6 @@ export class GameScene extends Phaser.Scene {
 
     // Create the ground layer directly from the map data
     const floorLayer = map.createLayer("Tile Layer 1", tileset, 0, 0)!;
-
     floorLayer.replaceByIndex(-1, 0);
 
     // Set collision for tiles with index 0 (walls)
@@ -48,6 +47,15 @@ export class GameScene extends Phaser.Scene {
     // Set world bounds to the map dimensions
     this.physics.world.bounds.width = map.widthInPixels;
     this.physics.world.bounds.height = map.heightInPixels;
+
+    const wallUpperLayer = map.createBlankLayer("Wall Upper", tileset, 0, 0)!;
+    floorLayer.forEachTile((tile) => {
+      if (tile.index === 130) {
+        if (floorLayer.getTileAt(tile.x, tile.y - 1).index === 0) {
+          wallUpperLayer.putTileAt(35, tile.x, tile.y - 1);
+        }
+      }
+    });
 
     // --- Player Creation ---
     const playerStartX = Math.floor(map.widthInPixels / 2);
