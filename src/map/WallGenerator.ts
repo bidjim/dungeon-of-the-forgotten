@@ -7,19 +7,11 @@ import {
   EMPTY_TILE_INDEX,
 } from "../constants";
 
-type WallLayers = {
-  wallSideLayer: Phaser.Tilemaps.TilemapLayer;
-  wallUpperLayer: Phaser.Tilemaps.TilemapLayer;
-  wallTopUpperLayer: Phaser.Tilemaps.TilemapLayer;
-  wallLowerLayer: Phaser.Tilemaps.TilemapLayer;
-  wallTopLowerLayer: Phaser.Tilemaps.TilemapLayer;
-};
-
 export const generateWallLayers = (
   map: Phaser.Tilemaps.Tilemap,
   tileset: Phaser.Tilemaps.Tileset,
   floorLayer: Phaser.Tilemaps.TilemapLayer
-): WallLayers => {
+) => {
   // Create blank layers
   const wallSideLeftLayer = map.createBlankLayer(
     "Wall Side Left",
@@ -49,8 +41,12 @@ export const generateWallLayers = (
   )!;
 
   // Set depths (Optimization: batch these if possible, but depth setting is cheap)
+  wallSideLeftLayer.setDepth(0);
+  wallSideRightLayer.setDepth(0);
+  wallUpperLayer.setDepth(0);
+  wallTopUpperLayer.setDepth(2);
   wallLowerLayer.setDepth(1);
-  wallTopLowerLayer.setDepth(1);
+  wallTopLowerLayer.setDepth(2);
 
   // Access raw data array directly.
   const grid = floorLayer.layer.data;
@@ -120,7 +116,9 @@ export const generateWallLayers = (
       wallUpperLayer.putTileAt(WALL_KEYS.WE, x, y - 1);
 
       // Wall Top Decor
-      if (isUpRightFloor) {
+      if (isUpRightFloor && isUpLeftFloor) {
+        wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.LEFT_BOTTOM_RIGHT, x, y - 2);
+      } else if (isUpRightFloor) {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_RIGHT_LONG, x, y - 2);
       } else if (isUpLeftFloor) {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_LONG, x, y - 2);
@@ -135,18 +133,26 @@ export const generateWallLayers = (
         const isSouthWestEmpty = getIndex(x - 1, y + 1) === EMPTY_TILE_INDEX;
 
         if (isSouthWestEmpty) {
-          wallUpperLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y - 1);
+          wallSideLeftLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y - 1);
         }
-        wallUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_RIGHT_DOT, x - 1, y - 2);
+        wallTopUpperLayer.putTileAt(
+          WALL_TOP_KEYS.BOTTOM_RIGHT_DOT,
+          x - 1,
+          y - 2
+        );
       }
 
       // North-East Corner Logic
       if (isRightEmpty) {
         const isSouthEastEmpty = getIndex(x + 1, y + 1) === EMPTY_TILE_INDEX;
         if (isSouthEastEmpty) {
-          wallUpperLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x + 1, y - 1);
+          wallSideRightLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x + 1, y - 1);
         }
-        wallUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_DOT, x + 1, y - 2);
+        wallTopUpperLayer.putTileAt(
+          WALL_TOP_KEYS.BOTTOM_LEFT_DOT,
+          x + 1,
+          y - 2
+        );
       }
     }
 
@@ -156,7 +162,9 @@ export const generateWallLayers = (
       wallLowerLayer.putTileAt(WALL_KEYS.WE, x, y);
 
       // Complex Corner Logic for South
-      if (isDownRightFloor) {
+      if (isDownRightFloor && isDownLeftFloor) {
+        wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.LEFT_TOP_RIGHT, x, y);
+      } else if (isDownRightFloor) {
         wallTopLowerLayer.putTileAt(
           WALL_TOP_KEYS.BOTTOM_RIGHT_HOLLOW,
           x,
@@ -171,30 +179,26 @@ export const generateWallLayers = (
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_HOLLOW, x, y - 1);
         wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x, y);
       } else {
-        wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.E, x, y - 1);
+        wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.WE, x, y - 1);
       }
 
       // South-East Edge
       if (isRightEmpty) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_RIGHT, x + 1, y);
-        wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
-        wallSideLeftLayer.putTileAt(SIDE_WALL_KEYS.LEFT_HOLLOW, x + 1, y - 1);
+        wallSideRightLayer.putTileAt(SIDE_WALL_KEYS.LEFT_HOLLOW, x + 1, y - 1);
+        if (!isDownLeftFloor) {
+          wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
+        }
       }
 
       // South-West Edge
       if (isLeftEmpty) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_LEFT, x - 1, y);
-        wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
         wallSideLeftLayer.putTileAt(SIDE_WALL_KEYS.RIGHT_HOLLOW, x - 1, y - 1);
+        if (!isDownRightFloor) {
+          wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
+        }
       }
     }
   });
-
-  return {
-    wallSideLayer: wallSideLeftLayer,
-    wallUpperLayer,
-    wallTopUpperLayer,
-    wallLowerLayer,
-    wallTopLowerLayer,
-  };
 };
