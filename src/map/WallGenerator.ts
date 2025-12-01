@@ -21,7 +21,18 @@ export const generateWallLayers = (
   floorLayer: Phaser.Tilemaps.TilemapLayer
 ): WallLayers => {
   // Create blank layers
-  const wallSideLayer = map.createBlankLayer("Wall Side", tileset, 0, 0)!;
+  const wallSideLeftLayer = map.createBlankLayer(
+    "Wall Side Left",
+    tileset,
+    0,
+    0
+  )!;
+  const wallSideRightLayer = map.createBlankLayer(
+    "Wall Side Right",
+    tileset,
+    0,
+    0
+  )!;
   const wallUpperLayer = map.createBlankLayer("Wall Upper", tileset, 0, 0)!;
   const wallTopUpperLayer = map.createBlankLayer(
     "Wall Top Upper",
@@ -97,10 +108,10 @@ export const generateWallLayers = (
 
     // --- Side Walls (Left/Right) ---
     if (isLeftEmpty && isDownFloor) {
-      wallSideLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y);
+      wallSideLeftLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y);
     }
     if (isRightEmpty && isDownFloor) {
-      wallSideLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x + 1, y);
+      wallSideRightLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x + 1, y);
     }
 
     // --- North Walls ---
@@ -167,20 +178,20 @@ export const generateWallLayers = (
       if (isRightEmpty) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_RIGHT, x + 1, y);
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
-        wallSideLayer.putTileAt(SIDE_WALL_KEYS.LEFT_HOLLOW, x + 1, y - 1);
+        wallSideLeftLayer.putTileAt(SIDE_WALL_KEYS.LEFT_HOLLOW, x + 1, y - 1);
       }
 
       // South-West Edge
       if (isLeftEmpty) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_LEFT, x - 1, y);
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
-        wallSideLayer.putTileAt(SIDE_WALL_KEYS.RIGHT_HOLLOW, x - 1, y - 1);
+        wallSideLeftLayer.putTileAt(SIDE_WALL_KEYS.RIGHT_HOLLOW, x - 1, y - 1);
       }
     }
   });
 
   return {
-    wallSideLayer,
+    wallSideLayer: wallSideLeftLayer,
     wallUpperLayer,
     wallTopUpperLayer,
     wallLowerLayer,

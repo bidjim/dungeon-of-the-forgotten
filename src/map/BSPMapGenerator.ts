@@ -1,3 +1,4 @@
+import { EMPTY_TILE_INDEX, FLOOR_KEYS } from "../constants";
 import { Leaf } from "./Leaf";
 import { MAX_LEAF_SIZE } from "./config";
 
@@ -17,7 +18,7 @@ export class BSPMapGenerator {
   public generate(): number[][] {
     // 1. Initialize empty map with walls
     this.map = Array.from({ length: this.height }, () =>
-      Array(this.width).fill(0)
+      Array(this.width).fill(EMPTY_TILE_INDEX)
     );
 
     // 2. Build the Tree
@@ -61,11 +62,13 @@ export class BSPMapGenerator {
     if (leaf.left) this.paintMap(leaf.left);
     if (leaf.right) this.paintMap(leaf.right);
 
+    const floorTile = Array.from(FLOOR_KEYS)[0];
+
     // Paint Room
     if (leaf.room) {
       for (let y = leaf.room.y; y < leaf.room.y + leaf.room.h; y++) {
         for (let x = leaf.room.x; x < leaf.room.x + leaf.room.w; x++) {
-          this.safeSet(x, y, 129);
+          this.safeSet(x, y, floorTile);
         }
       }
     }
@@ -75,7 +78,7 @@ export class BSPMapGenerator {
       for (const hall of leaf.halls) {
         for (let y = hall.y; y < hall.y + hall.h; y++) {
           for (let x = hall.x; x < hall.x + hall.w; x++) {
-            this.safeSet(x, y, 129);
+            this.safeSet(x, y, floorTile);
           }
         }
       }

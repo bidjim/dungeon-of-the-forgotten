@@ -1,8 +1,13 @@
-import { ASSET_KEYS } from "../constants";
+import { ASSET_KEYS, DEBUG_MAP } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
 import { generateWallLayers } from "../map/WallGenerator"; // Import the new function
+import { BSPMapGenerator } from "../map/BSPMapGenerator";
+
+const MAP_WIDTH = 50; // In tiles
+const MAP_HEIGHT = 50; // In tiles
+const TILE_SIZE = 16; // In pixels
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -21,7 +26,19 @@ export class GameScene extends Phaser.Scene {
     );
     joystick.setScrollFactor(0);
 
-    const map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
+    let map: Phaser.Tilemaps.Tilemap;
+    if (DEBUG_MAP) {
+      map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
+    } else {
+      const mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT); // Updated constructor call
+      const mapData = mapGenerator.generate(); // Get raw map data
+      map = this.make.tilemap({
+        data: mapData,
+        tileWidth: TILE_SIZE,
+        tileHeight: TILE_SIZE,
+      });
+    }
+
     const tileset = map.addTilesetImage(
       ASSET_KEYS.TILESET,
       ASSET_KEYS.DUNGEON_TILES
@@ -31,7 +48,8 @@ export class GameScene extends Phaser.Scene {
       throw new Error("Failed to load dungeon tileset.");
     }
 
-    const floorLayer = map.createLayer("Floor", tileset, 0, 0)!;
+    const floorLayer = map.createLayer(0, tileset)!;
+    // const floorLayer = map.createLayer("Floor", tileset, 0, 0)!;
     floorLayer.replaceByIndex(-1, 0);
     floorLayer.setCollision(0);
 
