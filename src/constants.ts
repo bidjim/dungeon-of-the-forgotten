@@ -1,5 +1,3 @@
-import { LEFT, RIGHT } from "phaser";
-
 export const ASSET_KEYS = {
   DUNGEON_TILES: "dungeon_tiles",
   KNIGHT: "knight",
@@ -16,8 +14,6 @@ export const ANIM_KEYS = {
   KNIGHT_IDLE: "knight_idle",
   KNIGHT_RUN: "knight_run",
 };
-
-// src/constants.ts
 
 // 0 is usually the index for "Empty" or "Transparent" in Phaser tilesets
 export const EMPTY_TILE_INDEX = 0;
