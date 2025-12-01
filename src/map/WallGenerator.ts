@@ -40,7 +40,7 @@ export const generateWallLayers = (
 
   floorLayer.forEachTile((tile) => {
     // We only care about processing around floor tiles to build walls around them
-    if (tile.index !== FLOOR_KEYS) return;
+    if (tile.index === 0) return;
 
     const x = tile.x;
     const y = tile.y;
@@ -60,9 +60,12 @@ export const generateWallLayers = (
       wallUpperLayer.putTileAt(WALL_KEYS.WE, x, y - 1);
 
       // Wall Top Decor
+      // If north-east tile is a floor
       if (getIndex(x + 1, y - 1) === FLOOR_KEYS) {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_RIGHT_LONG, x, y - 2);
-      } else if (getIndex(x - 1, y - 1) === FLOOR_KEYS) {
+      }
+      // If north-west tile is a floor
+      else if (getIndex(x - 1, y - 1) === FLOOR_KEYS) {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_LONG, x, y - 2);
       } else {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.WE, x, y - 2);
@@ -70,7 +73,7 @@ export const generateWallLayers = (
 
       // North-West Corner Logic
       if (getIndex(x - 1, y) === 0) {
-        if (getIndex(x - 1, y + 1) !== FLOOR_KEYS) {
+        if (getIndex(x - 1, y + 1) === 0) {
           wallUpperLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y - 1);
         }
         wallUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_RIGHT_DOT, x - 1, y - 2);
@@ -78,7 +81,7 @@ export const generateWallLayers = (
 
       // North-East Corner Logic
       if (getIndex(x + 1, y) === 0) {
-        if (getIndex(x + 1, y + 1) !== FLOOR_KEYS) {
+        if (getIndex(x + 1, y + 1) === 0) {
           wallUpperLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x + 1, y - 1);
         }
         wallUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_DOT, x + 1, y - 2);
@@ -92,25 +95,28 @@ export const generateWallLayers = (
       wallLowerLayer.putTileAt(WALL_KEYS.WE, x, y);
 
       // Complex Corner Logic for South
-      if (
-        getIndex(x + 1, y + 1) === FLOOR_KEYS &&
-        getIndex(x, y + 1) !== FLOOR_KEYS
-      ) {
+      // If the south-east tile is a floor and the south tile is a wall
+      if (getIndex(x + 1, y + 1) === FLOOR_KEYS && getIndex(x, y + 1) === 0) {
         wallTopLowerLayer.putTileAt(
           WALL_TOP_KEYS.BOTTOM_RIGHT_HOLLOW,
           x,
           y - 1
         );
         wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x, y);
-      } else if (
+      }
+
+      // If the north-west tile is a floor and the west tile is a wall
+      else if (
         getIndex(x - 1, y - 1) === FLOOR_KEYS &&
-        getIndex(x - 1, y) !== FLOOR_KEYS
+        getIndex(x - 1, y) === 0
       ) {
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
         wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.RIGHT_HOLLOW, x - 1, y - 1);
-      } else if (
+      }
+      // If the south-west tile is a floor and the south tile is a wall
+      else if (
         getIndex(x - 1, y + 1) === FLOOR_KEYS &&
-        getIndex(x, y + 1) !== FLOOR_KEYS
+        getIndex(x, y + 1) === 0
       ) {
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_HOLLOW, x, y - 1);
         wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x, y);
@@ -119,14 +125,14 @@ export const generateWallLayers = (
       }
 
       // South-East Edge
-      if (getIndex(x + 1, y) !== FLOOR_KEYS) {
+      if (getIndex(x + 1, y) === 0) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_RIGHT, x + 1, y);
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
         wallSideLayer.putTileAt(SIDE_WALL_KEYS.LEFT_HOLLOW, x + 1, y - 1);
       }
 
       // South-West Edge
-      if (getIndex(x - 1, y) !== FLOOR_KEYS) {
+      if (getIndex(x - 1, y) === 0) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_LEFT, x - 1, y);
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
         wallSideLayer.putTileAt(SIDE_WALL_KEYS.RIGHT_HOLLOW, x - 1, y - 1);
