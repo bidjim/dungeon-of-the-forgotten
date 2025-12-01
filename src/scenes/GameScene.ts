@@ -233,8 +233,8 @@ export class GameScene extends Phaser.Scene {
     });
 
     // --- Player Creation ---
-    const playerStartX = map.tileWidth * 2;
-    const playerStartY = map.tileHeight * 8;
+    const playerStartX = map.widthInPixels / 2;
+    const playerStartY = map.heightInPixels / 2;
 
     this.player = new Player(
       this,
