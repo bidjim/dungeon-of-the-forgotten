@@ -17,25 +17,34 @@ export const ANIM_KEYS = {
   KNIGHT_RUN: "knight_run",
 };
 
-export const FLOOR_KEYS = 66;
+export const FLOOR_KEYS = 98;
 
 export const WALL_KEYS = {
-  E: 18,
-  WE: 19,
-  W: 20,
-};
-
-export const WALL_TOP_KEYS = {
   E: 2,
   WE: 3,
   W: 4,
-  BOTTOM_RIGHT_LONG: 117,
-  BOTTOM_RIGHT_DOT: 114,
-  BOTTOM_LEFT_LONG: 149,
-  BOTTOM_LEFT_DOT: 116,
+};
+
+export const WALL_TOP_KEYS = {
+  E: 12,
+  WE: 13,
+  W: 14,
+  BOTTOM_RIGHT_LONG: 80,
+  BOTTOM_RIGHT_DOT: 44,
+  BOTTOM_LEFT_LONG: 79,
+  BOTTOM_LEFT_DOT: 46,
+  TOP_RIGHT_LONG: 48,
+  BOTTOM_RIGHT_HOLLOW: 112,
+  BOTTOM_LEFT_HOLLOW: 111,
+  BOTTOM_LEFT_HOLLOW_TOP: 175,
+  BOTTOM: 109,
 };
 
 export const SIDE_WALL_KEYS = {
-  RIGHT: 146,
-  LEFT: 148,
+  RIGHT: 76,
+  RIGHT_HOLLOW: 108,
+  LEFT: 78,
+  LEFT_HOLLOW: 110,
+  BOTTOM_LEFT: 140,
+  BOTTOM_RIGHT: 142,
 };

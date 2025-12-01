@@ -54,6 +54,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.bounds.width = map.widthInPixels;
     this.physics.world.bounds.height = map.heightInPixels;
 
+    const wallSideLayer = map.createBlankLayer("Wall Side", tileset, 0, 0)!;
     const wallUpperLayer = map.createBlankLayer("Wall Upper", tileset, 0, 0)!;
     const wallTopUpperLayer = map.createBlankLayer(
       "Wall Top Upper",
@@ -72,14 +73,38 @@ export class GameScene extends Phaser.Scene {
     wallTopLowerLayer.setDepth(1);
     floorLayer.forEachTile((tile) => {
       if (tile.index === FLOOR_KEYS) {
+        if (
+          floorLayer.getTileAt(tile.x - 1, tile.y).index === 0 &&
+          floorLayer.getTileAt(tile.x, tile.y + 1).index === FLOOR_KEYS
+        ) {
+          wallSideLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, tile.x - 1, tile.y);
+        }
+        if (
+          floorLayer.getTileAt(tile.x + 1, tile.y).index === 0 &&
+          floorLayer.getTileAt(tile.x, tile.y + 1).index === FLOOR_KEYS
+        ) {
+          wallSideLayer.putTileAt(SIDE_WALL_KEYS.LEFT, tile.x + 1, tile.y);
+        }
+
         // Floor north is wall
         if (floorLayer.getTileAt(tile.x, tile.y - 1).index === 0) {
+          // Wall north
           wallUpperLayer.putTileAt(WALL_KEYS.WE, tile.x, tile.y - 1);
+
+          // Wall top north
           if (
             floorLayer.getTileAt(tile.x + 1, tile.y - 1).index === FLOOR_KEYS
           ) {
             wallTopUpperLayer.putTileAt(
               WALL_TOP_KEYS.BOTTOM_RIGHT_LONG,
+              tile.x,
+              tile.y - 2
+            );
+          } else if (
+            floorLayer.getTileAt(tile.x - 1, tile.y - 1).index === FLOOR_KEYS
+          ) {
+            wallTopUpperLayer.putTileAt(
+              WALL_TOP_KEYS.BOTTOM_LEFT_LONG,
               tile.x,
               tile.y - 2
             );
@@ -126,23 +151,82 @@ export class GameScene extends Phaser.Scene {
 
         // Floor south is wall
         if (floorLayer.getTileAt(tile.x, tile.y + 1).index === 0) {
+          // Wall south
           wallLowerLayer.putTileAt(WALL_KEYS.WE, tile.x, tile.y);
+
+          // Wall top south
           if (
+            floorLayer.getTileAt(tile.x + 1, tile.y + 1).index === FLOOR_KEYS &&
+            floorLayer.getTileAt(tile.x, tile.y + 1).index != FLOOR_KEYS
+          ) {
+            wallTopLowerLayer.putTileAt(
+              WALL_TOP_KEYS.BOTTOM_RIGHT_HOLLOW,
+              tile.x,
+              tile.y - 1
+            );
+            wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, tile.x, tile.y);
+          } else if (
             floorLayer.getTileAt(tile.x - 1, tile.y - 1).index === FLOOR_KEYS &&
             floorLayer.getTileAt(tile.x - 1, tile.y).index != FLOOR_KEYS
           ) {
             wallTopLowerLayer.putTileAt(
-              WALL_TOP_KEYS.BOTTOM_LEFT_LONG,
+              WALL_TOP_KEYS.BOTTOM,
               tile.x,
               tile.y - 1
             );
             wallTopLowerLayer.putTileAt(
-              WALL_TOP_KEYS.BOTTOM_LEFT_DOT,
-              tile.x,
-              tile.y - 2
+              SIDE_WALL_KEYS.RIGHT_HOLLOW,
+              tile.x - 1,
+              tile.y - 1
             );
+          } else if (
+            floorLayer.getTileAt(tile.x - 1, tile.y + 1).index === FLOOR_KEYS &&
+            floorLayer.getTileAt(tile.x, tile.y + 1).index != FLOOR_KEYS
+          ) {
+            wallTopLowerLayer.putTileAt(
+              WALL_TOP_KEYS.BOTTOM_LEFT_HOLLOW,
+              tile.x,
+              tile.y - 1
+            );
+            wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.LEFT, tile.x, tile.y);
           } else {
             wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.E, tile.x, tile.y - 1);
+          }
+
+          if (floorLayer.getTileAt(tile.x + 1, tile.y).index != FLOOR_KEYS) {
+            wallLowerLayer.putTileAt(
+              SIDE_WALL_KEYS.BOTTOM_RIGHT,
+              tile.x + 1,
+              tile.y
+            );
+            wallTopLowerLayer.putTileAt(
+              WALL_TOP_KEYS.BOTTOM,
+              tile.x,
+              tile.y - 1
+            );
+            wallSideLayer.putTileAt(
+              SIDE_WALL_KEYS.LEFT_HOLLOW,
+              tile.x + 1,
+              tile.y - 1
+            );
+          }
+
+          if (floorLayer.getTileAt(tile.x - 1, tile.y).index != FLOOR_KEYS) {
+            wallLowerLayer.putTileAt(
+              SIDE_WALL_KEYS.BOTTOM_LEFT,
+              tile.x - 1,
+              tile.y
+            );
+            wallTopLowerLayer.putTileAt(
+              WALL_TOP_KEYS.BOTTOM,
+              tile.x,
+              tile.y - 1
+            );
+            wallSideLayer.putTileAt(
+              SIDE_WALL_KEYS.RIGHT_HOLLOW,
+              tile.x - 1,
+              tile.y - 1
+            );
           }
         }
       }
