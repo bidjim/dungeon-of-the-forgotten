@@ -17,7 +17,13 @@ export const ANIM_KEYS = {
   KNIGHT_RUN: "knight_run",
 };
 
-export const FLOOR_KEYS = 98;
+// src/constants.ts
+
+// 0 is usually the index for "Empty" or "Transparent" in Phaser tilesets
+export const EMPTY_TILE_INDEX = 0;
+
+// Using a Set allows O(1) lookup and easy addition of multiple floor tile types later
+export const FLOOR_KEYS = new Set([98]);
 
 export const WALL_KEYS = {
   E: 2,

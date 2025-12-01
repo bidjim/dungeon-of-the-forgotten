@@ -4,13 +4,22 @@ import {
   SIDE_WALL_KEYS,
   WALL_KEYS,
   WALL_TOP_KEYS,
+  EMPTY_TILE_INDEX,
 } from "../constants";
+
+type WallLayers = {
+  wallSideLayer: Phaser.Tilemaps.TilemapLayer;
+  wallUpperLayer: Phaser.Tilemaps.TilemapLayer;
+  wallTopUpperLayer: Phaser.Tilemaps.TilemapLayer;
+  wallLowerLayer: Phaser.Tilemaps.TilemapLayer;
+  wallTopLowerLayer: Phaser.Tilemaps.TilemapLayer;
+};
 
 export const generateWallLayers = (
   map: Phaser.Tilemaps.Tilemap,
   tileset: Phaser.Tilemaps.Tileset,
   floorLayer: Phaser.Tilemaps.TilemapLayer
-) => {
+): WallLayers => {
   // Create blank layers
   const wallSideLayer = map.createBlankLayer("Wall Side", tileset, 0, 0)!;
   const wallUpperLayer = map.createBlankLayer("Wall Upper", tileset, 0, 0)!;
@@ -28,60 +37,102 @@ export const generateWallLayers = (
     0
   )!;
 
-  // Set depths
+  // Set depths (Optimization: batch these if possible, but depth setting is cheap)
   wallLowerLayer.setDepth(1);
   wallTopLowerLayer.setDepth(1);
 
-  // Helper to safely get tile index
+  // Access raw data array directly.
+  const grid = floorLayer.layer.data;
+  const mapWidth = floorLayer.layer.width;
+  const mapHeight = floorLayer.layer.height;
+
+  // Helper: Fast bounds check and index retrieval
   const getIndex = (x: number, y: number): number | null => {
-    const t = floorLayer.getTileAt(x, y);
-    return t ? t.index : null;
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return null;
+    return grid[y][x].index;
+  };
+
+  // Helper: Logic checks
+  const isFloor = (x: number, y: number) => {
+    const idx = getIndex(x, y);
+    return idx !== null && FLOOR_KEYS.has(idx);
+  };
+
+  const isWallOrEmpty = (x: number, y: number) => {
+    const idx = getIndex(x, y);
+    return idx === EMPTY_TILE_INDEX || idx === null; // Treat bounds as walls?
   };
 
   floorLayer.forEachTile((tile) => {
-    // We only care about processing around floor tiles to build walls around them
-    if (tile.index === 0) return;
+    // Skip if current tile is not a floor (we iterate floors to find where walls go)
+    if (!FLOOR_KEYS.has(tile.index)) return;
 
     const x = tile.x;
     const y = tile.y;
 
+    // --- Pre-calculate Neighbors ---
+    const n_Left = getIndex(x - 1, y);
+    const n_Right = getIndex(x + 1, y);
+    const n_Up = getIndex(x, y - 1);
+    const n_Down = getIndex(x, y + 1);
+    const n_UpLeft = getIndex(x - 1, y - 1);
+    const n_UpRight = getIndex(x + 1, y - 1);
+    const n_DownLeft = getIndex(x - 1, y + 1);
+    const n_DownRight = getIndex(x + 1, y + 1);
+
+    // Derived Booleans for readability
+    const isLeftEmpty = n_Left === EMPTY_TILE_INDEX;
+    const isRightEmpty = n_Right === EMPTY_TILE_INDEX;
+    const isUpEmpty = n_Up === EMPTY_TILE_INDEX;
+    const isDownEmpty = n_Down === EMPTY_TILE_INDEX;
+
+    // Check floor existence in corners/sides
+    const isDownFloor = n_Down !== null && FLOOR_KEYS.has(n_Down);
+    const isUpRightFloor = n_UpRight !== null && FLOOR_KEYS.has(n_UpRight);
+    const isUpLeftFloor = n_UpLeft !== null && FLOOR_KEYS.has(n_UpLeft);
+    const isDownRightFloor =
+      n_DownRight !== null && FLOOR_KEYS.has(n_DownRight);
+    const isDownLeftFloor = n_DownLeft !== null && FLOOR_KEYS.has(n_DownLeft);
+    const isUpLeftEmpty = n_UpLeft === EMPTY_TILE_INDEX; // Needed for NW corner logic checks
+
     // --- Side Walls (Left/Right) ---
-    if (getIndex(x - 1, y) === 0 && getIndex(x, y + 1) === FLOOR_KEYS) {
+    if (isLeftEmpty && isDownFloor) {
       wallSideLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y);
     }
-    if (getIndex(x + 1, y) === 0 && getIndex(x, y + 1) === FLOOR_KEYS) {
+    if (isRightEmpty && isDownFloor) {
       wallSideLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x + 1, y);
     }
 
     // --- North Walls ---
-    // If the tile above is a wall (0)
-    if (getIndex(x, y - 1) === 0) {
+    if (isUpEmpty) {
       // Base Wall
       wallUpperLayer.putTileAt(WALL_KEYS.WE, x, y - 1);
 
       // Wall Top Decor
-      // If north-east tile is a floor
-      if (getIndex(x + 1, y - 1) === FLOOR_KEYS) {
+      if (isUpRightFloor) {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_RIGHT_LONG, x, y - 2);
-      }
-      // If north-west tile is a floor
-      else if (getIndex(x - 1, y - 1) === FLOOR_KEYS) {
+      } else if (isUpLeftFloor) {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_LONG, x, y - 2);
       } else {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.WE, x, y - 2);
       }
 
       // North-West Corner Logic
-      if (getIndex(x - 1, y) === 0) {
-        if (getIndex(x - 1, y + 1) === 0) {
+      // Checks: Left is wall AND Left-Down is wall
+      if (isLeftEmpty) {
+        // Checks if the South-West neighbor (x-1, y+1) is an empty tile.
+        const isSouthWestEmpty = getIndex(x - 1, y + 1) === EMPTY_TILE_INDEX;
+
+        if (isSouthWestEmpty) {
           wallUpperLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y - 1);
         }
         wallUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_RIGHT_DOT, x - 1, y - 2);
       }
 
       // North-East Corner Logic
-      if (getIndex(x + 1, y) === 0) {
-        if (getIndex(x + 1, y + 1) === 0) {
+      if (isRightEmpty) {
+        const isSouthEastEmpty = getIndex(x + 1, y + 1) === EMPTY_TILE_INDEX;
+        if (isSouthEastEmpty) {
           wallUpperLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x + 1, y - 1);
         }
         wallUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_DOT, x + 1, y - 2);
@@ -89,35 +140,23 @@ export const generateWallLayers = (
     }
 
     // --- South Walls ---
-    // If the tile below is a wall (0)
-    if (getIndex(x, y + 1) === 0) {
+    if (isDownEmpty) {
       // Base Wall
       wallLowerLayer.putTileAt(WALL_KEYS.WE, x, y);
 
       // Complex Corner Logic for South
-      // If the south-east tile is a floor and the south tile is a wall
-      if (getIndex(x + 1, y + 1) === FLOOR_KEYS && getIndex(x, y + 1) === 0) {
+      if (isDownRightFloor) {
         wallTopLowerLayer.putTileAt(
           WALL_TOP_KEYS.BOTTOM_RIGHT_HOLLOW,
           x,
           y - 1
         );
         wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x, y);
-      }
-
-      // If the north-west tile is a floor and the west tile is a wall
-      else if (
-        getIndex(x - 1, y - 1) === FLOOR_KEYS &&
-        getIndex(x - 1, y) === 0
-      ) {
+      } else if (isUpLeftFloor && isLeftEmpty) {
+        // Original: getIndex(x - 1, y - 1) === FLOOR_KEYS && getIndex(x - 1, y) === 0
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
         wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.RIGHT_HOLLOW, x - 1, y - 1);
-      }
-      // If the south-west tile is a floor and the south tile is a wall
-      else if (
-        getIndex(x - 1, y + 1) === FLOOR_KEYS &&
-        getIndex(x, y + 1) === 0
-      ) {
+      } else if (isDownLeftFloor) {
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_HOLLOW, x, y - 1);
         wallTopLowerLayer.putTileAt(SIDE_WALL_KEYS.LEFT, x, y);
       } else {
@@ -125,14 +164,14 @@ export const generateWallLayers = (
       }
 
       // South-East Edge
-      if (getIndex(x + 1, y) === 0) {
+      if (isRightEmpty) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_RIGHT, x + 1, y);
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
         wallSideLayer.putTileAt(SIDE_WALL_KEYS.LEFT_HOLLOW, x + 1, y - 1);
       }
 
       // South-West Edge
-      if (getIndex(x - 1, y) === 0) {
+      if (isLeftEmpty) {
         wallLowerLayer.putTileAt(SIDE_WALL_KEYS.BOTTOM_LEFT, x - 1, y);
         wallTopLowerLayer.putTileAt(WALL_TOP_KEYS.BOTTOM, x, y - 1);
         wallSideLayer.putTileAt(SIDE_WALL_KEYS.RIGHT_HOLLOW, x - 1, y - 1);
