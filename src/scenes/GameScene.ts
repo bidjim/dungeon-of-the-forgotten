@@ -14,6 +14,8 @@ export class GameScene extends Phaser.Scene {
   private player!: Player;
   private mapGenerator!: BSPMapGenerator;
   private currentFloor: number = 1; // New property
+  private map!: Phaser.Tilemaps.Tilemap;
+  private fadedTiles: Phaser.Tilemaps.Tile[] = [];
 
   constructor() {
     super("GameScene");
@@ -33,11 +35,10 @@ export class GameScene extends Phaser.Scene {
     );
     joystick.setScrollFactor(0);
 
-    let map: Phaser.Tilemaps.Tilemap;
     let mapResult: MapGenerationResult;
 
     if (DEBUG_MAP) {
-      map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
+      this.map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
       // For debug map, we'll just hardcode a player spawn and no interactions for now
       mapResult = {
         map: [], // Not used for debug map
@@ -47,14 +48,14 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT);
       mapResult = this.mapGenerator.generate(this.currentFloor); // Pass currentFloor
-      map = this.make.tilemap({
+      this.map = this.make.tilemap({
         data: mapResult.map, // Use map data from result
         tileWidth: TILE_SIZE,
         tileHeight: TILE_SIZE,
       });
     }
 
-    const tileset = map.addTilesetImage(
+    const tileset = this.map.addTilesetImage(
       ASSET_KEYS.TILESET,
       ASSET_KEYS.DUNGEON_TILES
     );
@@ -63,14 +64,14 @@ export class GameScene extends Phaser.Scene {
       throw new Error("Failed to load dungeon tileset.");
     }
 
-    const floorLayer = map.createLayer(0, tileset)!;
+    const floorLayer = this.map.createLayer(0, tileset)!;
     floorLayer.replaceByIndex(-1, 0);
     floorLayer.setCollision(0);
 
-    this.physics.world.bounds.width = map.widthInPixels;
-    this.physics.world.bounds.height = map.heightInPixels;
+    this.physics.world.bounds.width = this.map.widthInPixels;
+    this.physics.world.bounds.height = this.map.heightInPixels;
 
-    generateWallLayers(map, tileset, floorLayer);
+    generateWallLayers(this.map, tileset, floorLayer);
 
     // --- Player Creation ---
     const playerWorldX = mapResult.playerSpawn.x * TILE_SIZE + TILE_SIZE / 2;
@@ -151,11 +152,49 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.cameras.main.startFollow(this.player);
-    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.cameras.main.setBounds(
+      0,
+      0,
+      this.map.widthInPixels,
+      this.map.heightInPixels
+    );
   }
 
   update() {
     this.player.update();
+    this.handlePlayerTransparency();
+  }
+
+  private handlePlayerTransparency() {
+    // Restore alpha for previously faded tiles
+    this.fadedTiles.forEach((tile) => (tile.alpha = 1));
+    this.fadedTiles = [];
+
+    // Check overlaps
+    const playerTileX = this.map.worldToTileX(this.player.x)!;
+    const playerTileY = this.map.worldToTileY(this.player.y)!;
+
+    // Layers that are drawn "above" the floor and might obscure the player
+    // "Wall Lower" corresponds to south wall faces (depth 1)
+    // "Wall Top Lower" corresponds to south wall tops (depth 2)
+    const obscuringLayers = ["Wall Lower", "Wall Top Lower"];
+
+    obscuringLayers.forEach((layerName) => {
+      // Check the tile the player is on, and the one immediately above (for head overlap)
+      [0, -1].forEach((yOffset) => {
+        const tile = this.map.getTileAt(
+          playerTileX,
+          playerTileY + yOffset,
+          false,
+          layerName
+        );
+
+        if (tile) {
+          tile.alpha = 0.6;
+          this.fadedTiles.push(tile);
+        }
+      });
+    });
   }
 
   private createInteractionObject(
