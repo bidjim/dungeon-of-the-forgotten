@@ -97,10 +97,6 @@ export function placeFirstFloorElements(
     );
     safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
     const nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
-    console.log(
-      "First floor stairs down location (fallback):",
-      nextFloorStairsLocation
-    );
     return {
       playerSpawn,
       gateLocation,
@@ -124,8 +120,6 @@ export function placeFirstFloorElements(
 
   safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
   const nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
-
-  console.log("First floor stairs down location:", nextFloorStairsLocation); // Debug log
 
   return {
     playerSpawn,
@@ -316,10 +310,10 @@ export function placeSubsequentFloorElements(
   // Make sure stairsDown is not on the same tile as previousFloorStairsLocation
   // PlayerSpawn is in a different room, so no need to check against it.
   while (
-    (previousFloorStairsLocation &&
-      stairsDownX === previousFloorStairsLocation.x &&
-      stairsDownY === previousFloorStairsLocation.y) &&
-    (attempts < maxAttempts) // Add attempts check here to prevent infinite loop
+    previousFloorStairsLocation &&
+    stairsDownX === previousFloorStairsLocation.x &&
+    stairsDownY === previousFloorStairsLocation.y &&
+    attempts < maxAttempts // Add attempts check here to prevent infinite loop
   ) {
     stairsDownX = randomInt(
       chosenRoomForStairsDown.x + 1,
