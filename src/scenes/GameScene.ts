@@ -1,4 +1,4 @@
-import { ASSET_KEYS, DEBUG_MAP, STAIRS_KEY } from "../constants";
+import { ASSET_KEYS, DEBUG_MAP } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
@@ -177,9 +177,23 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onInteractionOverlap(
-    player: Player,
-    object: Phaser.GameObjects.Sprite
+    gameObject1:
+      | Phaser.GameObjects.GameObject
+      | Phaser.Physics.Arcade.Body
+      | Phaser.Physics.Arcade.StaticBody
+      | Phaser.Tilemaps.Tile,
+    gameObject2:
+      | Phaser.GameObjects.GameObject
+      | Phaser.Physics.Arcade.Body
+      | Phaser.Physics.Arcade.StaticBody
+      | Phaser.Tilemaps.Tile
   ) {
+    if (!(gameObject1 instanceof Player)) {
+      console.warn("Overlap detected with non-Player object:", gameObject1);
+      return;
+    }
+    const player = gameObject1 as Player;
+    const object = gameObject2 as Phaser.GameObjects.Sprite;
     const type = object.getData("type");
     if (type === "gate") {
       console.log(
