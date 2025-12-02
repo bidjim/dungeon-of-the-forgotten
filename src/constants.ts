@@ -27,6 +27,11 @@ export const EMPTY_TILE_INDEX = 0;
 export const FLOOR_KEYS = new Set([98 + SPRITE_OFFSET]);
 export const STAIRS_KEY = 230 + SPRITE_OFFSET;
 
+export const GATE_KEYS = {
+  BOTTOM_LEFT_DOOR: 358 + SPRITE_OFFSET,
+  BOTTOM_RIGHT_DOOR: 359 + SPRITE_OFFSET,
+};
+
 export const WALL_KEYS = {
   E: 2 + SPRITE_OFFSET,
   WE: 3 + SPRITE_OFFSET,

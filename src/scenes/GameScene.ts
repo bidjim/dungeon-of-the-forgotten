@@ -1,14 +1,10 @@
-import {
-  ASSET_KEYS,
-  DEBUG_MAP,
-  EMPTY_TILE_INDEX,
-  STAIRS_KEY,
-} from "../constants";
+import { ASSET_KEYS, DEBUG_MAP, STAIRS_KEY } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
-import { generateWallLayers } from "../map/WallGenerator"; // Import the new function
+import { generateWallLayers } from "../map/WallGenerator";
 import { BSPMapGenerator } from "../map/BSPMapGenerator";
+import { MapGenerationResult } from "../types/map"; // New import
 
 const MAP_WIDTH = 50; // In tiles
 const MAP_HEIGHT = 50; // In tiles
@@ -16,13 +12,18 @@ const TILE_SIZE = 16; // In pixels
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
-  private mapGenerator!: BSPMapGenerator; // Store mapGenerator instance
+  private mapGenerator!: BSPMapGenerator;
+  private currentFloor: number = 1; // New property
 
   constructor() {
     super("GameScene");
   }
 
-  create() {
+  create(data?: { floor: number }) {
+    if (data && data.floor) {
+      this.currentFloor = data.floor;
+    }
+
     const cursors = this.input.keyboard!.createCursorKeys();
 
     const joystickConfig = createJoystickConfig(this);
@@ -33,13 +34,21 @@ export class GameScene extends Phaser.Scene {
     joystick.setScrollFactor(0);
 
     let map: Phaser.Tilemaps.Tilemap;
+    let mapResult: MapGenerationResult;
+
     if (DEBUG_MAP) {
       map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
+      // For debug map, we'll just hardcode a player spawn and no interactions for now
+      mapResult = {
+        map: [], // Not used for debug map
+        playerSpawn: { x: 10, y: 10 }, // Default debug spawn
+        entranceLocation: { x: 10, y: 10 },
+      };
     } else {
-      this.mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT); // Store instance
-      const mapData = this.mapGenerator.generate(); // Get raw map data
+      this.mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT);
+      mapResult = this.mapGenerator.generate(this.currentFloor); // Pass currentFloor
       map = this.make.tilemap({
-        data: mapData,
+        data: mapResult.map, // Use map data from result
         tileWidth: TILE_SIZE,
         tileHeight: TILE_SIZE,
       });
@@ -55,71 +64,66 @@ export class GameScene extends Phaser.Scene {
     }
 
     const floorLayer = map.createLayer(0, tileset)!;
-    // const floorLayer = map.createLayer("Floor", tileset, 0, 0)!;
     floorLayer.replaceByIndex(-1, 0);
     floorLayer.setCollision(0);
 
     this.physics.world.bounds.width = map.widthInPixels;
     this.physics.world.bounds.height = map.heightInPixels;
 
-    // --- Extracted Logic Call ---
     generateWallLayers(map, tileset, floorLayer);
 
     // --- Player Creation ---
-    // Player starts at a random floor tile, avoiding stairs initialy
-    let playerStartX: number;
-    let playerStartY: number;
-
-    const findPlayerStart = () => {
-      // Find a random safe floor tile for player spawn
-      let found = false;
-      while (!found) {
-        const rx = Phaser.Math.Between(1, MAP_WIDTH - 2);
-        const ry = Phaser.Math.Between(1, MAP_HEIGHT - 2);
-        const tile = floorLayer.getTileAt(rx, ry);
-        if (
-          tile &&
-          tile.index !== EMPTY_TILE_INDEX &&
-          tile.index !== STAIRS_KEY
-        ) {
-          playerStartX = rx * TILE_SIZE + TILE_SIZE / 2;
-          playerStartY = ry * TILE_SIZE + TILE_SIZE / 2;
-          found = true;
-        }
-      }
-    };
-    findPlayerStart();
+    const playerWorldX = mapResult.playerSpawn.x * TILE_SIZE + TILE_SIZE / 2;
+    const playerWorldY = mapResult.playerSpawn.y * TILE_SIZE + TILE_SIZE / 2;
 
     this.player = new Player(
       this,
-      playerStartX!,
-      playerStartY!,
+      playerWorldX,
+      playerWorldY,
       ASSET_KEYS.KNIGHT,
       cursors,
       joystick
     );
     this.physics.add.collider(this.player, floorLayer);
 
-    // --- Stairs Interaction ---
-    if (this.mapGenerator.stairsLocation) {
-      const stairsWorldX =
-        this.mapGenerator.stairsLocation.x * TILE_SIZE + TILE_SIZE / 2;
-      const stairsWorldY =
-        this.mapGenerator.stairsLocation.y * TILE_SIZE + TILE_SIZE / 2;
+    // --- Interaction Objects (Gate/Stairs) ---
+    if (mapResult.gateLocation) {
+      const gateWorldX =
+        mapResult.gateLocation.x * TILE_SIZE +
+        (mapResult.gateLocation.width * TILE_SIZE) / 2;
+      const gateWorldY = mapResult.gateLocation.y * TILE_SIZE + TILE_SIZE / 2;
+      const gate = this.createInteractionObject(
+        gateWorldX,
+        gateWorldY,
+        mapResult.gateLocation.width * TILE_SIZE,
+        mapResult.gateLocation.height * TILE_SIZE,
+        "gate"
+      );
+      this.physics.add.overlap(
+        this.player,
+        gate,
+        this.onInteractionOverlap,
+        undefined,
+        this
+      );
+    }
 
-      const stairs = this.physics.add.sprite(
+    if (mapResult.previousFloorStairsLocation) {
+      const stairsWorldX =
+        mapResult.previousFloorStairsLocation.x * TILE_SIZE + TILE_SIZE / 2;
+      const stairsWorldY =
+        mapResult.previousFloorStairsLocation.y * TILE_SIZE + TILE_SIZE / 2;
+      const stairs = this.createInteractionObject(
         stairsWorldX,
         stairsWorldY,
-        "transparent"
-      ); // Use an invisible sprite
-      stairs.setBodySize(TILE_SIZE, TILE_SIZE); // Make its body match the tile size
-      stairs.setImmovable(true);
-      stairs.setVisible(false); // Make it invisible
-
+        TILE_SIZE,
+        TILE_SIZE,
+        "stairs"
+      );
       this.physics.add.overlap(
         this.player,
         stairs,
-        this.onStairsOverlap,
+        this.onInteractionOverlap,
         undefined,
         this
       );
@@ -133,8 +137,39 @@ export class GameScene extends Phaser.Scene {
     this.player.update();
   }
 
-  private onStairsOverlap(player: Player, stairs: Phaser.GameObjects.Sprite) {
-    console.log("Player hit stairs! Restarting scene...");
-    this.scene.restart();
+  private createInteractionObject(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    type: string
+  ): Phaser.GameObjects.Sprite {
+    const object = this.physics.add.sprite(x, y, "transparent");
+    object.setBodySize(width, height);
+    object.setImmovable(true);
+    object.setVisible(false);
+    object.setData("type", type); // Store type for overlap handler
+    return object;
+  }
+
+  private onInteractionOverlap(
+    player: Player,
+    object: Phaser.GameObjects.Sprite
+  ) {
+    const type = object.getData("type");
+    if (type === "gate") {
+      console.log(
+        "Player hit the town gate! Going to town (or floor 1 for now)."
+      );
+      // TODO: Make this a proper town transition. For now, it's a placeholder.
+      // this.scene.restart({ floor: 1 });
+    } else if (type === "stairs") {
+      console.log(
+        `Player hit stairs! Going up to previous floor. Current floor: ${this.currentFloor}`
+      );
+      this.currentFloor--; // Go up one floor
+      if (this.currentFloor < 1) this.currentFloor = 1; // Prevent going below floor 1
+      this.scene.restart({ floor: this.currentFloor });
+    }
   }
 }
