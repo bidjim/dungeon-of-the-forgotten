@@ -5,6 +5,7 @@ import {
   WALL_KEYS,
   WALL_TOP_KEYS,
   EMPTY_TILE_INDEX,
+  GATE_KEYS,
 } from "../constants";
 
 export const generateWallLayers = (
@@ -48,6 +49,26 @@ export const generateWallLayers = (
   wallLowerLayer.setDepth(1);
   wallTopLowerLayer.setDepth(2);
 
+  // Helper function to place multi-tile gate components
+  const placeGateTiles = (
+    tile: Phaser.Tilemaps.Tile,
+    x: number,
+    y: number,
+    wallTopUpperLayer: Phaser.Tilemaps.TilemapLayer
+  ) => {
+    if (tile.index === GATE_KEYS.BOTTOM_LEFT_DOOR) {
+      wallTopUpperLayer.putTileAt(GATE_KEYS.MIDDLE_LEFT_DOOR, x, y - 1);
+      wallTopUpperLayer.putTileAt(GATE_KEYS.MIDDLE_LEFT_BRICK, x - 1, y - 1);
+      wallTopUpperLayer.putTileAt(GATE_KEYS.TOP_LEFT_DOOR, x, y - 2);
+    }
+
+    if (tile.index === GATE_KEYS.BOTTOM_RIGHT_DOOR) {
+      wallTopUpperLayer.putTileAt(GATE_KEYS.MIDDLE_RIGHT_DOOR, x, y - 1);
+      wallTopUpperLayer.putTileAt(GATE_KEYS.MIDDLE_RIGHT_BRICK, x + 1, y - 1);
+      wallTopUpperLayer.putTileAt(GATE_KEYS.TOP_RIGHT_DOOR, x, y - 2);
+    }
+  };
+
   // Access raw data array directly.
   const grid = floorLayer.layer.data;
   const mapWidth = floorLayer.layer.width;
@@ -71,11 +92,15 @@ export const generateWallLayers = (
   };
 
   floorLayer.forEachTile((tile) => {
-    // Skip if current tile is not a floor (we iterate floors to find where walls go)
-    if (!FLOOR_KEYS.has(tile.index)) return;
-
     const x = tile.x;
     const y = tile.y;
+
+    // Handle multi-tile gate placement. These override standard wall generation
+    // for tiles that are part of a gate structure.
+    placeGateTiles(tile, x, y, wallTopUpperLayer);
+
+    // Skip if current tile is not a floor (we iterate floors to find where walls go)
+    if (!FLOOR_KEYS.has(tile.index)) return;
 
     // --- Pre-calculate Neighbors ---
     const n_Left = getIndex(x - 1, y);
@@ -102,6 +127,11 @@ export const generateWallLayers = (
     const isDownLeftFloor = n_DownLeft !== null && FLOOR_KEYS.has(n_DownLeft);
     const isUpLeftEmpty = n_UpLeft === EMPTY_TILE_INDEX; // Needed for NW corner logic checks
 
+    const isUpLeftGate =
+      n_UpLeft !== null && GATE_KEYS.BOTTOM_RIGHT_DOOR == n_UpLeft;
+    const isUpRightGate =
+      n_UpRight !== null && GATE_KEYS.BOTTOM_LEFT_DOOR == n_UpRight;
+
     // --- Side Walls (Left/Right) ---
     if (isLeftEmpty && isDownFloor) {
       wallSideLeftLayer.putTileAt(SIDE_WALL_KEYS.RIGHT, x - 1, y);
@@ -123,7 +153,9 @@ export const generateWallLayers = (
       } else if (isUpLeftFloor) {
         wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.BOTTOM_LEFT_LONG, x, y - 2);
       } else {
-        wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.WE, x, y - 2);
+        if (!isUpLeftGate && !isUpRightGate) {
+          wallTopUpperLayer.putTileAt(WALL_TOP_KEYS.WE, x, y - 2);
+        }
       }
 
       // North-West Corner Logic
