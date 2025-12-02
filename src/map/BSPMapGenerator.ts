@@ -1,12 +1,15 @@
-import { EMPTY_TILE_INDEX, FLOOR_KEYS } from "../constants";
+import { EMPTY_TILE_INDEX, FLOOR_KEYS, STAIRS_KEY } from "../constants";
 import { Leaf } from "./Leaf";
 import { MAX_LEAF_SIZE } from "./config";
+import { Rect } from "../types/rect";
+import { randomInt } from "../helper";
 
 export class BSPMapGenerator {
   private width: number;
   private height: number;
   private root: Leaf;
-  public map: number[][]; // 2D array: '#' for wall, '.' for floor
+  public map: number[][];
+  public stairsLocation: { x: number; y: number; } | null = null;
 
   constructor(width: number, height: number) {
     this.width = width;
@@ -54,6 +57,19 @@ export class BSPMapGenerator {
     // 4. Paint the result onto the 2D grid
     this.paintMap(this.root);
 
+    // 5. Place Stairs
+    const allRooms: Rect[] = [];
+    this.getAllRooms(this.root, allRooms);
+
+    if (allRooms.length > 0) {
+      const chosenRoom = allRooms[randomInt(0, allRooms.length - 1)];
+      const stairsX = randomInt(chosenRoom.x + 1, chosenRoom.x + chosenRoom.w - 2);
+      const stairsY = randomInt(chosenRoom.y + 1, chosenRoom.y + chosenRoom.h - 2);
+      this.safeSet(stairsX, stairsY, STAIRS_KEY);
+      this.stairsLocation = { x: stairsX, y: stairsY };
+    }
+
+
     return this.map;
   }
 
@@ -82,6 +98,18 @@ export class BSPMapGenerator {
           }
         }
       }
+    }
+  }
+
+  private getAllRooms(leaf: Leaf, rooms: Rect[]): void {
+    if (leaf.room && !leaf.left && !leaf.right) {
+      rooms.push(leaf.room);
+    }
+    if (leaf.left) {
+      this.getAllRooms(leaf.left, rooms);
+    }
+    if (leaf.right) {
+      this.getAllRooms(leaf.right, rooms);
     }
   }
 
