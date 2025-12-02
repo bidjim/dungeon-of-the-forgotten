@@ -1,4 +1,4 @@
-import { GATE_KEYS, STAIRS_KEY } from "../constants";
+import { GATE_KEYS, STAIRS_KEYS } from "../constants";
 import { Leaf } from "./Leaf";
 import { randomInt } from "../helper";
 
@@ -17,6 +17,7 @@ export function placeFirstFloorElements(
     | { x: number; y: number; width: number; height: number }
     | undefined;
   entranceLocation: { x: number; y: number };
+  nextFloorStairsLocation: { x: number; y: number } | undefined;
 } {
   // First floor: player spawns at top-left, big gate to town
   // Find the top-leftmost room
@@ -77,7 +78,32 @@ export function placeFirstFloorElements(
   safeSet(gateLocation.x, gateLocation.y, GATE_KEYS.BOTTOM_LEFT_DOOR);
   safeSet(gateLocation.x + 1, gateLocation.y, GATE_KEYS.BOTTOM_RIGHT_DOOR);
 
-  return { playerSpawn, gateLocation, entranceLocation };
+  // --- Stairs Down Placement Logic ---
+  // Find the bottom-rightmost room
+  allRooms.sort((a, b) => {
+    if (!a.room || !b.room) return 0;
+    // Sort primarily by y (descending), then by x (descending)
+    if (a.room.y !== b.room.y) return b.room.y - a.room.y; // Largest Y first
+    return b.room.x - a.room.x; // Largest X first
+  });
+  const bottomRightRoom = allRooms[0].room!;
+
+  // Place stairs down in the bottom-right room, towards the center
+  const stairsDownX = randomInt(
+    bottomRightRoom.x + 1,
+    bottomRightRoom.x + bottomRightRoom.w - 2
+  );
+  const stairsDownY = randomInt(
+    bottomRightRoom.y + 1,
+    bottomRightRoom.y + bottomRightRoom.h - 2
+  );
+
+  safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
+  const nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
+
+  console.log("First floor stairs down location:", nextFloorStairsLocation); // Debug log
+
+  return { playerSpawn, gateLocation, entranceLocation, nextFloorStairsLocation };
 }
 
 export function placeSubsequentFloorElements(
@@ -89,6 +115,7 @@ export function placeSubsequentFloorElements(
 ): {
   playerSpawn: { x: number; y: number };
   previousFloorStairsLocation: { x: number; y: number } | undefined;
+  nextFloorStairsLocation: { x: number; y: number } | undefined;
   entranceLocation: { x: number; y: number };
 } {
   // Second and more floors: random spawn, stairs to previous floor
@@ -105,32 +132,31 @@ export function placeSubsequentFloorElements(
   const entranceLocation = { ...playerSpawn }; // Player enters here
 
   let previousFloorStairsLocation: { x: number; y: number } | undefined;
+  let nextFloorStairsLocation: { x: number; y: number } | undefined;
 
   // Place stairs to previous floor next to the player (e.g., just below the player)
-  const stairsX = playerX;
-  const stairsY = playerY + 1; // One tile below player
+  const stairsUpX = playerX;
+  const stairsUpY = playerY + 1; // One tile below player
 
   // Ensure stairs are within the room boundaries and not overlapping with other map features if possible
   if (
-    stairsX >= chosenRoom.x + 1 &&
-    stairsX <= chosenRoom.x + chosenRoom.w - 2 &&
-    stairsY >= chosenRoom.y + 1 &&
-    stairsY <= chosenRoom.y + chosenRoom.h - 2
+    stairsUpX >= chosenRoom.x + 1 &&
+    stairsUpX <= chosenRoom.x + chosenRoom.w - 2 &&
+    stairsUpY >= chosenRoom.y + 1 &&
+    stairsUpY <= chosenRoom.y + chosenRoom.h - 2
   ) {
-    safeSet(stairsX, stairsY, STAIRS_KEY);
-    previousFloorStairsLocation = { x: stairsX, y: stairsY };
+    safeSet(stairsUpX, stairsUpY, STAIRS_KEYS.UP);
+    previousFloorStairsLocation = { x: stairsUpX, y: stairsUpY };
   } else {
     // Fallback if stairs can't be placed ideally, try above or beside
-    // For simplicity, we'll try to find a spot. This might need more robust logic
-    // but for now, if y+1 is out, try y-1, then x+1, x-1.
     if (playerY - 1 >= chosenRoom.y + 1) {
-      safeSet(playerX, playerY - 1, STAIRS_KEY);
+      safeSet(playerX, playerY - 1, STAIRS_KEYS.UP);
       previousFloorStairsLocation = { x: playerX, y: playerY - 1 };
     } else if (playerX + 1 <= chosenRoom.x + chosenRoom.w - 2) {
-      safeSet(playerX + 1, playerY, STAIRS_KEY);
+      safeSet(playerX + 1, playerY, STAIRS_KEYS.UP);
       previousFloorStairsLocation = { x: playerX + 1, y: playerY };
     } else if (playerX - 1 >= chosenRoom.x + 1) {
-      safeSet(playerX - 1, playerY, STAIRS_KEY);
+      safeSet(playerX - 1, playerY, STAIRS_KEYS.UP);
       previousFloorStairsLocation = { x: playerX - 1, y: playerY };
     } else {
       console.warn(
@@ -138,5 +164,51 @@ export function placeSubsequentFloorElements(
       );
     }
   }
-  return { playerSpawn, previousFloorStairsLocation, entranceLocation };
+
+  // --- Place Stairs Down for next floor ---
+  // Find a suitable spot for stairs down, ideally in a different corner or opposite side of the room
+  // to avoid overlap with stairs up and player spawn.
+  let stairsDownX: number;
+  let stairsDownY: number;
+
+  // Try to place it in the top-right corner of the room, away from player spawn and stairs up
+  // If player spawn is top-left, stairs up is bottom-left, try top-right for stairs down.
+  // This logic should be more robust, but for now, let's pick a distinct corner.
+
+  stairsDownX = randomInt(chosenRoom.x + 1, chosenRoom.x + chosenRoom.w - 2);
+  stairsDownY = randomInt(chosenRoom.y + 1, chosenRoom.y + chosenRoom.h - 2);
+
+  // Ensure stairsDown is not on the same tile as stairsUp or playerSpawn
+  // This is a simple check; more complex logic might involve pathfinding or more intelligent placement
+  // but for most rooms, a random spot should work.
+  let attempts = 0;
+  const maxAttempts = 10;
+  while (
+    (stairsDownX === playerSpawn.x && stairsDownY === playerSpawn.y) ||
+    (previousFloorStairsLocation &&
+      stairsDownX === previousFloorStairsLocation.x &&
+      stairsDownY === previousFloorStairsLocation.y)
+  ) {
+    stairsDownX = randomInt(chosenRoom.x + 1, chosenRoom.x + chosenRoom.w - 2);
+    stairsDownY = randomInt(chosenRoom.y + 1, chosenRoom.y + chosenRoom.h - 2);
+    attempts++;
+    if (attempts > maxAttempts) {
+      console.warn(
+        "Could not find a unique spot for stairs down after multiple attempts."
+      );
+      break;
+    }
+  }
+
+  if (attempts <= maxAttempts) {
+    safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
+    nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
+  }
+
+  return {
+    playerSpawn,
+    previousFloorStairsLocation,
+    nextFloorStairsLocation,
+    entranceLocation,
+  };
 }

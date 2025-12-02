@@ -63,6 +63,8 @@ export class GameScene extends Phaser.Scene {
       throw new Error("Failed to load dungeon tileset.");
     }
 
+    console.log("GameScene mapResult:", mapResult); // Debug log
+
     const floorLayer = map.createLayer(0, tileset)!;
     floorLayer.replaceByIndex(-1, 0);
     floorLayer.setCollision(0);
@@ -108,6 +110,27 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
+    if (mapResult.nextFloorStairsLocation) {
+      const stairsWorldX =
+        mapResult.nextFloorStairsLocation.x * TILE_SIZE + TILE_SIZE / 2;
+      const stairsWorldY =
+        mapResult.nextFloorStairsLocation.y * TILE_SIZE + TILE_SIZE / 2;
+      const stairs = this.createInteractionObject(
+        stairsWorldX,
+        stairsWorldY,
+        TILE_SIZE,
+        TILE_SIZE,
+        "stair_down"
+      );
+      this.physics.add.overlap(
+        this.player,
+        stairs,
+        this.onInteractionOverlap,
+        undefined,
+        this
+      );
+    }
+
     if (mapResult.previousFloorStairsLocation) {
       const stairsWorldX =
         mapResult.previousFloorStairsLocation.x * TILE_SIZE + TILE_SIZE / 2;
@@ -118,7 +141,7 @@ export class GameScene extends Phaser.Scene {
         stairsWorldY,
         TILE_SIZE,
         TILE_SIZE,
-        "stairs"
+        "stair_up"
       );
       this.physics.add.overlap(
         this.player,
@@ -144,6 +167,7 @@ export class GameScene extends Phaser.Scene {
     height: number,
     type: string
   ): Phaser.GameObjects.Sprite {
+    console.log("Creating interaction object:", { x, y, width, height, type }); // Debug log
     const object = this.physics.add.sprite(x, y, "transparent");
     object.setBodySize(width, height);
     object.setImmovable(true);
@@ -163,12 +187,18 @@ export class GameScene extends Phaser.Scene {
       );
       // TODO: Make this a proper town transition. For now, it's a placeholder.
       // this.scene.restart({ floor: 1 });
-    } else if (type === "stairs") {
+    } else if (type === "stair_up") {
       console.log(
         `Player hit stairs! Going up to previous floor. Current floor: ${this.currentFloor}`
       );
       this.currentFloor--; // Go up one floor
       if (this.currentFloor < 1) this.currentFloor = 1; // Prevent going below floor 1
+      this.scene.restart({ floor: this.currentFloor });
+    } else if (type === "stair_down") {
+      console.log(
+        `Player hit stairs! Going down to next floor. Current floor: ${this.currentFloor}`
+      );
+      this.currentFloor++; // Go down one floor
       this.scene.restart({ floor: this.currentFloor });
     }
   }

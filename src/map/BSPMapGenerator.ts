@@ -71,6 +71,7 @@ export class BSPMapGenerator {
     let gateLocation:
       | { x: number; y: number; width: number; height: number }
       | undefined;
+    let nextFloorStairsLocation: { x: number; y: number } | undefined;
     let previousFloorStairsLocation: { x: number; y: number } | undefined;
     let entranceLocation: { x: number; y: number } | undefined;
 
@@ -88,6 +89,7 @@ export class BSPMapGenerator {
       playerSpawn = result.playerSpawn;
       gateLocation = result.gateLocation;
       entranceLocation = result.entranceLocation;
+      nextFloorStairsLocation = result.nextFloorStairsLocation;
     } else {
       const result = placeSubsequentFloorElements(
         this.map,
@@ -99,6 +101,7 @@ export class BSPMapGenerator {
       playerSpawn = result.playerSpawn;
       previousFloorStairsLocation = result.previousFloorStairsLocation;
       entranceLocation = result.entranceLocation;
+      nextFloorStairsLocation = result.nextFloorStairsLocation;
     }
 
     if (!playerSpawn) {
@@ -109,6 +112,7 @@ export class BSPMapGenerator {
       map: this.map,
       playerSpawn: playerSpawn,
       gateLocation: gateLocation,
+      nextFloorStairsLocation: nextFloorStairsLocation,
       previousFloorStairsLocation: previousFloorStairsLocation,
       entranceLocation: entranceLocation,
     };

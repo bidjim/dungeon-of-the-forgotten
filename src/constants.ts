@@ -25,7 +25,6 @@ export const EMPTY_TILE_INDEX = 0;
 
 // Using a Set allows O(1) lookup and easy addition of multiple floor tile types later
 export const FLOOR_KEYS = new Set([98 + SPRITE_OFFSET]);
-export const STAIRS_KEY = 230 + SPRITE_OFFSET;
 
 export const GATE_KEYS = {
   BOTTOM_LEFT_DOOR: 358 + SPRITE_OFFSET,
@@ -63,4 +62,9 @@ export const SIDE_WALL_KEYS = {
   LEFT_HOLLOW: 110 + SPRITE_OFFSET,
   BOTTOM_LEFT: 140 + SPRITE_OFFSET,
   BOTTOM_RIGHT: 142 + SPRITE_OFFSET,
+};
+
+export const STAIRS_KEYS = {
+  DOWN: 230 + SPRITE_OFFSET,
+  UP: 195 + SPRITE_OFFSET,
 };
