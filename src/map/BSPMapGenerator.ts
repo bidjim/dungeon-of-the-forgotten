@@ -1,4 +1,4 @@
-import { EMPTY_TILE_INDEX, FLOOR_KEYS } from "../constants";
+import { EMPTY_TILE_INDEX, FLOOR_KEYS, MAP_MARGINS } from "../constants";
 import { Leaf } from "./Leaf";
 import { MAX_LEAF_SIZE } from "./config";
 import { MapGenerationResult } from "../types/map";
@@ -17,7 +17,12 @@ export class BSPMapGenerator {
     this.width = width;
     this.height = height;
     this.map = [];
-    this.root = new Leaf(0, 0, width, height);
+    this.root = new Leaf(
+      MAP_MARGINS.LEFT,
+      MAP_MARGINS.TOP,
+      width - MAP_MARGINS.LEFT - MAP_MARGINS.RIGHT,
+      height - MAP_MARGINS.TOP - MAP_MARGINS.BOTTOM
+    );
   }
 
   public generate(floorNumber: number = 1): MapGenerationResult {

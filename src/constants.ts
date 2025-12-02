@@ -1,5 +1,12 @@
 export const DEBUG_MAP = false;
 
+export const MAP_MARGINS = {
+  TOP: 2,
+  BOTTOM: 0,
+  LEFT: 1,
+  RIGHT: 1,
+};
+
 export const ASSET_KEYS = {
   DUNGEON_TILES: "dungeon_tiles",
   KNIGHT: "knight",
