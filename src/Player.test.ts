@@ -39,6 +39,8 @@ vi.mock("phaser", () => {
             setCollideWorldBounds = vi.fn();
             setVelocityX = vi.fn();
             setVelocityY = vi.fn();
+
+            destroy(fromScene?: boolean) {}
           },
         },
       },
@@ -54,15 +56,37 @@ describe("Player", () => {
   let mockScene: any;
   let mockCursors: any;
   let mockJoystick: Joystick;
+  let mockHurtbox: any;
 
   beforeEach(() => {
+    // 1. Setup the Hurtbox Mock
+    mockHurtbox = {
+      body: { moves: true },
+      setPosition: vi.fn(),
+      destroy: vi.fn(),
+      x: 0,
+      y: 0,
+    };
+
+    // 2. Setup Scene Mocks
     mockScene = {
       add: {
         existing: vi.fn(),
+        // Mock the zone creation to return our mockHurtbox
+        zone: vi.fn().mockReturnValue(mockHurtbox),
       },
       physics: {
         add: {
-          existing: vi.fn(),
+          existing: vi.fn((target: any) => {
+            // Ensure the target (Player or Hurtbox) has a mock body
+            if (!target.body) {
+              target.body = {
+                setSize: vi.fn(),
+                setOffset: vi.fn(),
+                moves: true,
+              };
+            }
+          }),
         },
       },
     };
@@ -177,6 +201,23 @@ describe("Player", () => {
       expect(callX).toBeCloseTo(0);
       expect(callY).toBeCloseTo(160);
       expect(player.anims.play).toHaveBeenCalledWith("knight_run", true);
+    });
+
+    it("should sync hurtbox position to match player", () => {
+      // Move player manually to simulate change
+      player.x = 250;
+      player.y = 300;
+
+      player.update();
+
+      expect(mockHurtbox.setPosition).toHaveBeenCalledWith(250, 300);
+    });
+  });
+
+  describe("destroy", () => {
+    it("should destroy the hurtbox when player is destroyed", () => {
+      player.destroy();
+      expect(mockHurtbox.destroy).toHaveBeenCalled();
     });
   });
 });
