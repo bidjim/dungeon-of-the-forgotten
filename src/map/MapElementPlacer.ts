@@ -203,10 +203,11 @@ export function placeSubsequentFloorElements(
     let attempts = 0;
     const maxAttempts = 10;
     while (
-      (stairsDownX === playerSpawn.x && stairsDownY === playerSpawn.y) ||
-      (previousFloorStairsLocation &&
-        stairsDownX === previousFloorStairsLocation.x &&
-        stairsDownY === previousFloorStairsLocation.y)
+      ((stairsDownX === playerSpawn.x && stairsDownY === playerSpawn.y) ||
+        (previousFloorStairsLocation &&
+          stairsDownX === previousFloorStairsLocation.x &&
+          stairsDownY === previousFloorStairsLocation.y)) &&
+      attempts < maxAttempts
     ) {
       stairsDownX = randomInt(
         chosenRoom.x + 1,
@@ -217,18 +218,16 @@ export function placeSubsequentFloorElements(
         chosenRoom.y + chosenRoom.h - 2
       );
       attempts++;
-      if (attempts > maxAttempts) {
-        console.warn(
-          "Could not find a unique spot for stairs down after multiple attempts."
-        );
-        break;
-      }
     }
 
-    if (attempts <= maxAttempts) {
-      safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
-      nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
+    if (attempts >= maxAttempts) {
+      throw new Error(
+        "Failed to find a unique spot for stairs down after multiple attempts."
+      );
     }
+    // Only set if a unique spot was found
+    safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
+    nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
 
     return {
       playerSpawn,
@@ -236,7 +235,7 @@ export function placeSubsequentFloorElements(
       nextFloorStairsLocation,
       entranceLocation,
     };
-  }
+  } // This is the correct closing brace for the `if (allRooms.length < 2)` block
 
   // Choose two distinct rooms
   const roomIndices = Array.from({ length: allRooms.length }, (_, i) => i);
@@ -313,7 +312,7 @@ export function placeSubsequentFloorElements(
     previousFloorStairsLocation &&
     stairsDownX === previousFloorStairsLocation.x &&
     stairsDownY === previousFloorStairsLocation.y &&
-    attempts < maxAttempts // Add attempts check here to prevent infinite loop
+    attempts < maxAttempts
   ) {
     stairsDownX = randomInt(
       chosenRoomForStairsDown.x + 1,
@@ -327,8 +326,8 @@ export function placeSubsequentFloorElements(
   }
 
   if (attempts >= maxAttempts) {
-    console.warn(
-      "Could not find a unique spot for stairs down after multiple attempts in a separate room."
+    throw new Error(
+      "Failed to find a unique spot for stairs down after multiple attempts in a separate room."
     );
   }
 
