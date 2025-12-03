@@ -6,6 +6,7 @@ import {
   WALL_TOP_KEYS,
   EMPTY_TILE_INDEX,
   GATE_KEYS,
+  STAIRS_KEYS,
 } from "../constants";
 
 export const generateWallLayers = (
@@ -40,8 +41,10 @@ export const generateWallLayers = (
     0,
     0
   )!;
+  const stairsLayer = map.createBlankLayer("Stairs", tileset, 0, 0)!;
 
   // Set depths (Optimization: batch these if possible, but depth setting is cheap)
+  stairsLayer.setDepth(-1);
   wallSideLeftLayer.setDepth(0);
   wallSideRightLayer.setDepth(0);
   wallUpperLayer.setDepth(0);
@@ -98,6 +101,10 @@ export const generateWallLayers = (
     // Handle multi-tile gate placement. These override standard wall generation
     // for tiles that are part of a gate structure.
     placeGateTiles(tile, x, y, wallTopUpperLayer);
+
+    if (tile.index === STAIRS_KEYS.UP) {
+      stairsLayer.putTileAt(getIndex(x, y - 1)!, x, y);
+    }
 
     // Skip if current tile is not a floor (we iterate floors to find where walls go)
     if (!FLOOR_KEYS.has(tile.index)) return;
