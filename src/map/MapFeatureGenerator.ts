@@ -91,7 +91,7 @@ export const generateWallLayers = (
 
   const isWallOrEmpty = (x: number, y: number) => {
     const idx = getIndex(x, y);
-    return idx === EMPTY_TILE_INDEX || idx === null; // Treat bounds as walls?
+    return idx === EMPTY_TILE_INDEX || idx === null; // Intentionally treat out-of-bounds (null) as empty/wall
   };
 
   floorLayer.forEachTile((tile) => {
