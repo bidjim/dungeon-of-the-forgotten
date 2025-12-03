@@ -137,6 +137,51 @@ export class Leaf {
   }
 
   /**
+   * Helper to add L-shaped corridor segments to the halls array.
+   * @param p1 The starting point of the corridor (corridorStartPoint).
+   * @param p2 The ending point of the corridor (corridorEndPoint).
+   * @param horizontalFirst If true, draws the horizontal segment first, then vertical. Otherwise, vertical then horizontal.
+   */
+  private _addLShapedCorridorSegments(
+    p1: { x: number; y: number },
+    p2: { x: number; y: number },
+    horizontalFirst: boolean
+  ): void {
+    if (horizontalFirst) {
+      // Horizontal segment
+      this.halls.push({
+        x: Math.min(p1.x, p2.x),
+        y: p1.y,
+        w: Math.abs(p1.x - p2.x),
+        h: 2,
+      });
+      // Vertical segment
+      this.halls.push({
+        x: p2.x,
+        y: Math.min(p1.y, p2.y),
+        w: 2,
+        h: Math.abs(p1.y - p2.y),
+      });
+    } else {
+      // Vertical segment
+      this.halls.push({
+        x: p1.x,
+        y: Math.min(p1.y, p2.y),
+        w: 2,
+        h: Math.abs(p1.y - p2.y),
+      });
+      // Horizontal segment
+      this.halls.push({
+        x: Math.min(p1.x, p2.x),
+        y: p2.y,
+        w: Math.abs(p1.x - p2.x),
+        h: 2,
+      });
+    }
+  }
+
+
+  /**
    * Connects two rooms with an L-shaped corridor.
    * This method calculates random points within each room and generates
    * two orthogonal corridor segments to connect them, forming an L-shape.
@@ -179,77 +224,17 @@ export class Leaf {
       if (verticalDistance < 0) {
         // Randomly decide which segment to draw first: horizontal or vertical.
         if (Math.random() < 0.5) {
-          // Option A: Draw horizontal segment first.
-          // This segment starts at the x-coordinate of corridorEndPoint, extends to the x-coordinate of corridorStartPoint,
-          // and is aligned with the y-coordinate of corridorStartPoint.
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorStartPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw the vertical segment.
-          // This segment connects the horizontal segment's end (at corridorEndPoint.x, corridorStartPoint.y)
-          // to the corridorEndPoint (at corridorEndPoint.x, corridorEndPoint.y).
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorEndPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
         } else {
-          // Option B: Draw vertical segment first.
-          // This segment starts at the y-coordinate of corridorEndPoint, extends to the y-coordinate of corridorStartPoint,
-          // and is aligned with the x-coordinate of corridorStartPoint.
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorEndPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw the horizontal segment.
-          // This segment connects the vertical segment's end (at corridorStartPoint.x, corridorEndPoint.y)
-          // to the corridorEndPoint (at corridorEndPoint.x, corridorEndPoint.y).
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorEndPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
         }
       }
       // Subcase 1.2: The corridorEndPoint is below the corridorStartPoint (verticalDistance is positive).
       else if (verticalDistance > 0) {
         if (Math.random() < 0.5) {
-          // Option A: Draw horizontal segment first.
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorStartPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw vertical segment.
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorStartPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
         } else {
-          // Option B: Draw vertical segment first.
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorEndPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw horizontal segment.
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorStartPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
         }
       }
       // Subcase 1.3: The corridorEndPoint and corridorStartPoint are on the same Y-axis (verticalDistance is zero).
@@ -269,69 +254,17 @@ export class Leaf {
       // Subcase 2.1: The corridorEndPoint is above the corridorStartPoint (verticalDistance is negative).
       if (verticalDistance < 0) {
         if (Math.random() < 0.5) {
-          // Option A: Draw horizontal segment first.
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorEndPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw vertical segment.
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorEndPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
         } else {
-          // Option B: Draw vertical segment first.
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorStartPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw horizontal segment.
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorEndPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
         }
       }
       // Subcase 2.2: The corridorEndPoint is below the corridorStartPoint (verticalDistance is positive).
       else if (verticalDistance > 0) {
         if (Math.random() < 0.5) {
-          // Option A: Draw horizontal segment first.
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorStartPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw vertical segment.
-          this.halls.push({
-            x: corridorEndPoint.x,
-            y: corridorStartPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
         } else {
-          // Option B: Draw vertical segment first.
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorEndPoint.y,
-            w: Math.abs(horizontalDistance),
-            h: 2,
-          });
-          // Then draw horizontal segment.
-          this.halls.push({
-            x: corridorStartPoint.x,
-            y: corridorStartPoint.y,
-            w: 2,
-            h: Math.abs(verticalDistance),
-          });
+          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
         }
       }
       // Subcase 2.3: The corridorEndPoint and corridorStartPoint are on the same Y-axis (verticalDistance is zero).
