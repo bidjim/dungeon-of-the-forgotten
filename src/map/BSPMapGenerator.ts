@@ -1,6 +1,6 @@
 import { EMPTY_TILE_INDEX, FLOOR_KEYS, MAP_MARGINS } from "../constants";
 import { Leaf } from "./Leaf";
-import { MAX_LEAF_SIZE } from "./config";
+import { MAX_LEAF_SIZE, SPLIT_CHANCE_RATIO } from "./config";
 import { MapGenerationResult } from "../types/map";
 import {
   placeFirstFloorElements,
@@ -45,7 +45,7 @@ export class BSPMapGenerator {
           if (
             leaf.w > MAX_LEAF_SIZE ||
             leaf.h > MAX_LEAF_SIZE ||
-            Math.random() > 0.25
+            Math.random() > SPLIT_CHANCE_RATIO
           ) {
             if (leaf.split()) {
               // Push new children to array
