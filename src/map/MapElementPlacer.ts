@@ -1,9 +1,7 @@
 import { GATE_KEYS, STAIRS_KEYS } from "../constants";
 import { Leaf } from "./Leaf";
 import { randomInt } from "../helper";
-
-// Define a type for the safeSet function that will be passed in
-type SafeSetFunction = (x: number, y: number, value: number) => void;
+import { SafeSetFunction } from "../types/map";
 
 export function placeFirstFloorElements(
   map: number[][],
