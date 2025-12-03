@@ -24,6 +24,13 @@ export const ANIM_KEYS = {
   KNIGHT_RUN: "knight_run",
 };
 
+export const PLAYER_PHYSICS_BODY = {
+  WIDTH_MULTIPLIER: 0.75,
+  HEIGHT_MULTIPLIER: 0.25,
+  OFFSET_X_MULTIPLIER: 0.125,
+  OFFSET_Y_MULTIPLIER: 0.75,
+};
+
 // Iterates over an object and returns a new one with all values -1
 const SPRITE_OFFSET = DEBUG_MAP ? 0 : -1;
 

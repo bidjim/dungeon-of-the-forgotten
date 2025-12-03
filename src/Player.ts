@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { Joystick } from "./types/joystick";
-import { ANIM_KEYS } from "./constants";
+import { ANIM_KEYS, PLAYER_PHYSICS_BODY } from "./constants";
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -33,11 +33,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     // Set the physics body to be the full width, but only bottom 25% height
-    body.setSize(this.width * 0.75, this.height * 0.25);
+    body.setSize(
+      this.width * PLAYER_PHYSICS_BODY.WIDTH_MULTIPLIER,
+      this.height * PLAYER_PHYSICS_BODY.HEIGHT_MULTIPLIER
+    );
 
     // Push the offset down so the body sits at the feet
     // (x offset, y offset)
-    body.setOffset(this.width * 0.125, this.height * 0.75);
+    body.setOffset(
+      this.width * PLAYER_PHYSICS_BODY.OFFSET_X_MULTIPLIER,
+      this.height * PLAYER_PHYSICS_BODY.OFFSET_Y_MULTIPLIER
+    );
 
     // --- CREATE HURTBOX (FULL BODY) ---
     // Create a Zone (invisible entity) at the player's position with full size
