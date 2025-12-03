@@ -2,7 +2,7 @@ import { ASSET_KEYS, DEBUG_MAP } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
-import { generateWallLayers } from "../map/WallGenerator";
+import { generateWallLayers } from "../map/MapFeatureGenerator";
 import { BSPMapGenerator } from "../map/BSPMapGenerator";
 import { MapGenerationResult } from "../types/map"; // New import
 
