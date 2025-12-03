@@ -10,7 +10,7 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: "arcade",
     arcade: {
-      debug: true,
+      debug: import.meta.env.VITE_APP_DEBUG_MODE === 'true',
       gravity: { x: 0, y: 0 },
     },
   },
