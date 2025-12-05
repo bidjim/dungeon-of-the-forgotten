@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { ASSET_KEYS, ASSET_PATHS } from "../constants";
+import { ASSET_KEYS, ASSET_PATHS, DEBUG_MAP } from "../constants";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,10 +7,22 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet(ASSET_KEYS.DUNGEON_TILES, ASSET_PATHS.DUNGEON_TILES, {
-      frameWidth: 16,
-      frameHeight: 16,
-    });
+    if (DEBUG_MAP) {
+      this.load.image(ASSET_KEYS.DUNGEON_TILES, ASSET_PATHS.DUNGEON_TILES);
+      this.load.tilemapTiledJSON(
+        ASSET_KEYS.DUNGEON_TILES,
+        ASSET_PATHS.DUNGEON_JSON
+      );
+    } else {
+      this.load.spritesheet(
+        ASSET_KEYS.DUNGEON_TILES,
+        ASSET_PATHS.DUNGEON_TILES,
+        {
+          frameWidth: 16,
+          frameHeight: 16,
+        }
+      );
+    }
     this.load.spritesheet(ASSET_KEYS.KNIGHT, ASSET_PATHS.KNIGHT, {
       frameWidth: 16,
       frameHeight: 24,
