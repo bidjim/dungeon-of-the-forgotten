@@ -7,6 +7,7 @@ import {
   EMPTY_TILE_INDEX,
   GATE_KEYS,
   STAIRS_KEYS,
+  LAYER_DEPTHS,
 } from "../constants";
 
 export const generateWallLayers = (
@@ -44,13 +45,13 @@ export const generateWallLayers = (
   const stairsLayer = map.createBlankLayer("Stairs", tileset, 0, 0)!;
 
   // Set depths (Optimization: batch these if possible, but depth setting is cheap)
-  stairsLayer.setDepth(-1);
-  wallSideLeftLayer.setDepth(0);
-  wallSideRightLayer.setDepth(0);
-  wallUpperLayer.setDepth(0);
-  wallTopUpperLayer.setDepth(2);
-  wallLowerLayer.setDepth(1);
-  wallTopLowerLayer.setDepth(2);
+  stairsLayer.setDepth(LAYER_DEPTHS.STAIRS);
+  wallSideLeftLayer.setDepth(LAYER_DEPTHS.WALL_SIDE);
+  wallSideRightLayer.setDepth(LAYER_DEPTHS.WALL_SIDE);
+  wallUpperLayer.setDepth(LAYER_DEPTHS.WALL_UPPER);
+  wallTopUpperLayer.setDepth(LAYER_DEPTHS.WALL_TOP_UPPER);
+  wallLowerLayer.setDepth(LAYER_DEPTHS.WALL_LOWER);
+  wallTopLowerLayer.setDepth(LAYER_DEPTHS.WALL_TOP_LOWER);
 
   // Helper function to place multi-tile gate components
   const placeGateTiles = (
