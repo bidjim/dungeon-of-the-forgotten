@@ -102,13 +102,6 @@ export const generateWallLayers = (
     // for tiles that are part of a gate structure.
     placeGateTiles(tile, x, y, wallTopUpperLayer);
 
-    if (tile.index === STAIRS_KEYS.UP) {
-      stairsLayer.putTileAt(getIndex(x, y - 1)!, x, y);
-    }
-
-    // Skip if current tile is not a floor (we iterate floors to find where walls go)
-    if (!FLOOR_KEYS.has(tile.index)) return;
-
     // --- Pre-calculate Neighbors ---
     const n_Left = getIndex(x - 1, y);
     const n_Right = getIndex(x + 1, y);
@@ -118,6 +111,48 @@ export const generateWallLayers = (
     const n_UpRight = getIndex(x + 1, y - 1);
     const n_DownLeft = getIndex(x - 1, y + 1);
     const n_DownRight = getIndex(x + 1, y + 1);
+
+    if (tile.index === STAIRS_KEYS.UP) {
+      let blendIndex: number | null = null; // Initialize to null
+
+      // First, try the tile directly above (n_Up)
+      if (n_Up !== null && n_Up !== EMPTY_TILE_INDEX) {
+        blendIndex = n_Up;
+      }
+
+      // If no valid tile above, check other neighbors in a specific order
+      if (blendIndex === null) {
+        const potentialNeighbors = [
+          n_Down,
+          n_Left,
+          n_Right, // Direct neighbors
+          n_UpLeft,
+          n_UpRight, // Diagonal-up neighbors
+          n_DownLeft,
+          n_DownRight, // Diagonal-down neighbors
+        ];
+
+        for (const neighborTileIndex of potentialNeighbors) {
+          if (
+            neighborTileIndex !== null &&
+            neighborTileIndex !== EMPTY_TILE_INDEX
+          ) {
+            blendIndex = neighborTileIndex;
+            break; // Found a valid blend tile, stop searching
+          }
+        }
+      }
+
+      // If a valid blendIndex was found, use it. Otherwise, default to EMPTY_TILE_INDEX.
+      stairsLayer.putTileAt(
+        blendIndex !== null ? blendIndex : EMPTY_TILE_INDEX,
+        x,
+        y
+      );
+    }
+
+    // Skip if current tile is not a floor (we iterate floors to find where walls go)
+    if (!FLOOR_KEYS.has(tile.index)) return;
 
     // Derived Booleans for readability
     const isLeftEmpty = n_Left === EMPTY_TILE_INDEX;
