@@ -6,6 +6,7 @@ import {
   placeFirstFloorElements,
   placeSubsequentFloorElements,
 } from "./MapElementPlacer";
+import { Rect } from "../types/rect";
 
 export class BSPMapGenerator {
   private width: number;
@@ -64,13 +65,17 @@ export class BSPMapGenerator {
     // 4. Paint the result onto the 2D grid
     this.paintMap(this.root);
 
-    // Collect all rooms
+    // 5. Collect all rooms
     const allRooms: Leaf[] = [];
     this.getAllRooms(this.root, allRooms);
 
     if (allRooms.length === 0) {
       throw new Error("No rooms generated in the dungeon.");
     }
+
+    const rooms: Rect[] = allRooms
+      .map((leaf) => leaf.room!)
+      .filter((room): room is Rect => room !== null); // Filter out nulls if any
 
     let playerSpawn: { x: number; y: number } | undefined;
     let gateLocation:
@@ -115,6 +120,7 @@ export class BSPMapGenerator {
 
     return {
       map: this.map,
+      rooms: rooms,
       playerSpawn: playerSpawn,
       gateLocation: gateLocation,
       nextFloorStairsLocation: nextFloorStairsLocation,

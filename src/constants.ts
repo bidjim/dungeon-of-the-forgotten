@@ -1,3 +1,6 @@
+export const MAP_WIDTH = 64; // In tiles
+export const MAP_HEIGHT = 64; // In tiles
+
 export const DEBUG_MAP = false;
 
 export const MAP_MARGINS = {
