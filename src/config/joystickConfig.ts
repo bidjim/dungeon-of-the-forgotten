@@ -1,10 +1,10 @@
 import Phaser from "phaser";
+import VirtualJoyStick from "phaser3-rex-plugins/plugins/virtualjoystick";
 
 const JOYSTICK_PROPERTIES = {
   x: 100,
   y: 500,
   radius: 50,
-  dir: "8dir",
   forceMin: 16,
   fixed: true,
   enable: true,
@@ -30,7 +30,9 @@ const JOYSTICK_THUMB_PROPERTIES = {
  * @param scene The Phaser Scene instance.
  * @returns A complete joystick configuration object, ready to be passed to a joystick plugin.
  */
-export function createJoystickConfig(scene: Phaser.Scene) {
+export function createJoystickConfig(
+  scene: Phaser.Scene
+): VirtualJoyStick.IConfig {
   const base = scene.add.circle(
     0,
     0,
@@ -50,5 +52,6 @@ export function createJoystickConfig(scene: Phaser.Scene) {
     ...JOYSTICK_PROPERTIES,
     base: base,
     thumb: thumb,
+    dir: "8dir",
   };
 }

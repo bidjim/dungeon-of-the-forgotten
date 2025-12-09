@@ -84,17 +84,6 @@ export const generateWallLayers = (
     return grid[y][x].index;
   };
 
-  // Helper: Logic checks
-  const isFloor = (x: number, y: number) => {
-    const idx = getIndex(x, y);
-    return idx !== null && FLOOR_KEYS.has(idx);
-  };
-
-  const isWallOrEmpty = (x: number, y: number) => {
-    const idx = getIndex(x, y);
-    return idx === EMPTY_TILE_INDEX || idx === null; // Intentionally treat out-of-bounds (null) as empty/wall
-  };
-
   floorLayer.forEachTile((tile) => {
     const x = tile.x;
     const y = tile.y;
@@ -168,7 +157,6 @@ export const generateWallLayers = (
     const isDownRightFloor =
       n_DownRight !== null && FLOOR_KEYS.has(n_DownRight);
     const isDownLeftFloor = n_DownLeft !== null && FLOOR_KEYS.has(n_DownLeft);
-    const isUpLeftEmpty = n_UpLeft === EMPTY_TILE_INDEX; // Needed for NW corner logic checks
 
     const isUpLeftGate =
       n_UpLeft !== null && GATE_KEYS.BOTTOM_RIGHT_DOOR == n_UpLeft;

@@ -106,7 +106,6 @@ export class InteractionManager {
       console.warn("Overlap detected with non-Player object:", gameObject1);
       return;
     }
-    const player = gameObject1 as Player;
     const object = gameObject2 as Phaser.GameObjects.Sprite;
     const type = object.getData("type");
 

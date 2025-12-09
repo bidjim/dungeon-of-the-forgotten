@@ -5,6 +5,7 @@ import { createJoystickConfig } from "../config/joystickConfig";
 import { generateWallLayers } from "../map/MapFeatureGenerator";
 import { FloorData, Vector2 } from "../types/map";
 import { InteractionManager } from "../managers/InteractionManager"; // New import
+import VirtualJoyStickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-plugin.js";
 
 const TILE_SIZE = 16; // In pixels
 
@@ -41,10 +42,9 @@ export class GameScene extends Phaser.Scene {
     const cursors = this.input.keyboard!.createCursorKeys();
 
     const joystickConfig = createJoystickConfig(this);
-    const joystick = (this.plugins.get("rexVirtualJoystick") as any).add(
-      this,
-      joystickConfig
-    );
+    const joystick = (
+      this.plugins.get("rexVirtualJoystick") as VirtualJoyStickPlugin
+    ).add(this, joystickConfig);
     joystick.setScrollFactor(0);
 
     if (DEBUG_MAP) {

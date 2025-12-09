@@ -28,7 +28,7 @@ export class BSPMapGenerator {
   }
 
   public async generate(floorNumber: number = 1): Promise<MapGenerationResult> {
-    let maxAttempts = 10; // Prevent infinite recursion
+    const maxAttempts = 10; // Prevent infinite recursion
     let attempt = 0;
 
     while (attempt < maxAttempts) {
