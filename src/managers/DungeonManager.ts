@@ -3,9 +3,9 @@ import {
   EntityState,
   ItemState,
   MapGenerationResult,
-} from "./types/map";
-import { BSPMapGenerator } from "./map/BSPMapGenerator"; // Assuming this is the map generator
-import { MAP_HEIGHT, MAP_WIDTH } from "./constants"; // Assuming map dimensions are in constants
+} from "../types/map";
+import { BSPMapGenerator } from "../map/BSPMapGenerator"; // Assuming this is the map generator
+import { MAP_HEIGHT, MAP_WIDTH } from "../constants"; // Assuming map dimensions are in constants
 
 class DungeonManager {
   private static instance: DungeonManager;
