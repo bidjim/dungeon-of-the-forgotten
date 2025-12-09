@@ -122,7 +122,7 @@ export class InteractionManager {
       );
       let newFloor = this.currentFloor - 1;
       if (newFloor < 1) newFloor = 1; // Prevent going below floor 1
-      this.scene.scene.restart({ floor: newFloor });
+      this.scene.scene.restart({ floor: newFloor, cameFrom: 'up' });
     } else if (type === "stair_down") {
       DungeonManager.getInstance().saveFloorState(
         this.currentFloorData.id, // Use the ID of the current floor being left
@@ -131,7 +131,7 @@ export class InteractionManager {
         this.explorationMap // Pass the current exploration map
       );
       const newFloor = this.currentFloor + 1;
-      this.scene.scene.restart({ floor: newFloor });
+      this.scene.scene.restart({ floor: newFloor, cameFrom: 'down' });
     }
   }
 }

@@ -62,6 +62,7 @@ class DungeonManager {
             : generationResult.previousFloorStairsLocation || null,
         down: generationResult.nextFloorStairsLocation || null,
       },
+      gate: generationResult.gateLocation || null,
       explorationMap: Array(MAP_HEIGHT)
         .fill(0)
         .map(() => Array(MAP_WIDTH).fill(0)), // All unseen

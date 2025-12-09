@@ -15,5 +15,6 @@ export interface FloorData {
     up: Vector2 | null; // Position of stairs leading to prev floor, can be null for level 1
     down: Vector2 | null; // Position of stairs leading to next floor, also can be null for the last floor
   };
+  gate: Vector2 | null; // Position of the entrance gate
   explorationMap: number[][]; // 0=Unseen, 1=Explored (Fog of War memory)
 }
