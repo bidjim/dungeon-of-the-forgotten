@@ -27,14 +27,16 @@ class DungeonManager {
    * @param level The level number of the floor to retrieve.
    * @returns FloorData for the specified level.
    */
-  public getFloor(level: number): FloorData {
+  public async getFloor(level: number): Promise<FloorData> {
     if (this.floors.has(level)) {
       return this.floors.get(level)!;
     }
 
     console.log(`Generating new floor for level: ${level}`);
     const mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT);
-    const generationResult: MapGenerationResult = mapGenerator.generate(level); // Pass level to generate, and call generate()
+    const generationResult: MapGenerationResult = await mapGenerator.generate(
+      level
+    ); // Pass level to generate, and call generate()
     const missingStairs =
       (level === 1 && !generationResult.nextFloorStairsLocation) ||
       (level !== 1 &&

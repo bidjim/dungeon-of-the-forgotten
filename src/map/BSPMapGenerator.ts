@@ -7,6 +7,7 @@ import {
   placeSubsequentFloorElements,
 } from "./MapElementPlacer";
 import { Rect } from "../types/rect";
+import { PathValidator } from "./PathValidator";
 
 export class BSPMapGenerator {
   private width: number;
@@ -26,107 +27,152 @@ export class BSPMapGenerator {
     );
   }
 
-  public generate(floorNumber: number = 1): MapGenerationResult {
-    // 1. Initialize empty map with walls
-    this.map = Array.from({ length: this.height }, () =>
-      Array(this.width).fill(EMPTY_TILE_INDEX)
-    );
+  public async generate(floorNumber: number = 1): Promise<MapGenerationResult> {
+    let maxAttempts = 10; // Prevent infinite recursion
+    let attempt = 0;
 
-    // 2. Build the Tree
-    const leaves: Leaf[] = [this.root];
-    let didSplit = true;
+    while (attempt < maxAttempts) {
+      attempt++;
 
-    // Loop until no more splits can happen
-    while (didSplit) {
-      didSplit = false;
-      for (const leaf of leaves) {
-        // If this leaf has no children...
-        if (leaf.left === null && leaf.right === null) {
-          // Check if it's too big or just random chance
-          if (
-            leaf.w > MAX_LEAF_SIZE ||
-            leaf.h > MAX_LEAF_SIZE ||
-            Math.random() > SPLIT_CHANCE_RATIO
-          ) {
-            if (leaf.split()) {
-              // Push new children to array
-              leaves.push(leaf.left!);
-              leaves.push(leaf.right!);
-              didSplit = true;
+      try {
+        // 1. Initialize empty map with walls
+        this.map = Array.from({ length: this.height }, () =>
+          Array(this.width).fill(EMPTY_TILE_INDEX)
+        );
+
+        // 2. Build the Tree
+        const leaves: Leaf[] = [this.root];
+        let didSplit = true;
+
+        // Loop until no more splits can happen
+        while (didSplit) {
+          didSplit = false;
+          for (const leaf of leaves) {
+            // If this leaf has no children...
+            if (leaf.left === null && leaf.right === null) {
+              // Check if it's too big or just random chance
+              if (
+                leaf.w > MAX_LEAF_SIZE ||
+                leaf.h > MAX_LEAF_SIZE ||
+                Math.random() > SPLIT_CHANCE_RATIO
+              ) {
+                if (leaf.split()) {
+                  // Push new children to array
+                  leaves.push(leaf.left!);
+                  leaves.push(leaf.right!);
+                  didSplit = true;
+                }
+              }
             }
           }
         }
+
+        // 3. Create Rooms (This recursively creates halls too)
+        this.root.createRooms();
+
+        // 4. Paint the result onto the 2D grid
+        this.paintMap(this.root);
+
+        // 5. Collect all rooms
+        const allRooms: Leaf[] = [];
+        this.getAllRooms(this.root, allRooms);
+
+        if (allRooms.length === 0) {
+          throw new Error("No rooms generated in the dungeon.");
+        }
+
+        const rooms: Rect[] = allRooms
+          .map((leaf) => leaf.room!)
+          .filter((room): room is Rect => room !== null); // Filter out nulls if any
+
+        let playerSpawn: { x: number; y: number } | undefined;
+        let gateLocation:
+          | { x: number; y: number; width: number; height: number }
+          | undefined;
+        let nextFloorStairsLocation: { x: number; y: number } | undefined;
+        let previousFloorStairsLocation: { x: number; y: number } | undefined;
+        let entranceLocation: { x: number; y: number } | undefined;
+
+        const safeSetWrapper = (x: number, y: number, value: number) =>
+          this.safeSet(x, y, value);
+
+        if (floorNumber === 1) {
+          const result = placeFirstFloorElements(
+            this.map,
+            this.width,
+            this.height,
+            safeSetWrapper,
+            allRooms
+          );
+          playerSpawn = result.playerSpawn;
+          gateLocation = result.gateLocation;
+          entranceLocation = result.entranceLocation;
+          nextFloorStairsLocation = result.nextFloorStairsLocation;
+        } else {
+          const result = placeSubsequentFloorElements(
+            this.map,
+            this.width,
+            this.height,
+            safeSetWrapper,
+            allRooms
+          );
+          playerSpawn = result.playerSpawn;
+          previousFloorStairsLocation = result.previousFloorStairsLocation;
+          entranceLocation = result.entranceLocation;
+          nextFloorStairsLocation = result.nextFloorStairsLocation;
+        }
+
+        if (!playerSpawn || !entranceLocation) {
+          throw new Error(
+            "Failed to determine player spawn or entrance location."
+          );
+        }
+
+        // 6. Validate path from entrance to exit
+        let isValidPath = true;
+
+        const exitLocation = nextFloorStairsLocation || null;
+        if (exitLocation !== null) {
+          isValidPath = await PathValidator.validateMapPath(
+            this.map,
+            floorNumber,
+            entranceLocation,
+            exitLocation
+          );
+        }
+
+        if (isValidPath) {
+          // Path validation successful (or skipped for last floor), return the map
+          return {
+            map: this.map,
+            rooms: rooms,
+            playerSpawn: playerSpawn,
+            gateLocation: gateLocation || null,
+            nextFloorStairsLocation: nextFloorStairsLocation || null,
+            previousFloorStairsLocation: previousFloorStairsLocation || null,
+            entranceLocation: entranceLocation || null,
+          };
+        } else {
+          // Path validation failed, regenerate the map
+          console.log(
+            `Path validation failed on attempt ${attempt}, regenerating map...`
+          );
+          continue;
+        }
+      } catch (error) {
+        console.error(`Error generating map on attempt ${attempt}:`, error);
+        if (attempt >= maxAttempts) {
+          throw new Error(
+            `Failed to generate a valid map after ${maxAttempts} attempts.`
+          );
+        }
+        continue;
       }
     }
 
-    // 3. Create Rooms (This recursively creates halls too)
-    this.root.createRooms();
-
-    // 4. Paint the result onto the 2D grid
-    this.paintMap(this.root);
-
-    // 5. Collect all rooms
-    const allRooms: Leaf[] = [];
-    this.getAllRooms(this.root, allRooms);
-
-    if (allRooms.length === 0) {
-      throw new Error("No rooms generated in the dungeon.");
-    }
-
-    const rooms: Rect[] = allRooms
-      .map((leaf) => leaf.room!)
-      .filter((room): room is Rect => room !== null); // Filter out nulls if any
-
-    let playerSpawn: { x: number; y: number } | undefined;
-    let gateLocation:
-      | { x: number; y: number; width: number; height: number }
-      | undefined;
-    let nextFloorStairsLocation: { x: number; y: number } | undefined;
-    let previousFloorStairsLocation: { x: number; y: number } | undefined;
-    let entranceLocation: { x: number; y: number } | undefined;
-
-    const safeSetWrapper = (x: number, y: number, value: number) =>
-      this.safeSet(x, y, value);
-
-    if (floorNumber === 1) {
-      const result = placeFirstFloorElements(
-        this.map,
-        this.width,
-        this.height,
-        safeSetWrapper,
-        allRooms
-      );
-      playerSpawn = result.playerSpawn;
-      gateLocation = result.gateLocation;
-      entranceLocation = result.entranceLocation;
-      nextFloorStairsLocation = result.nextFloorStairsLocation;
-    } else {
-      const result = placeSubsequentFloorElements(
-        this.map,
-        this.width,
-        this.height,
-        safeSetWrapper,
-        allRooms
-      );
-      playerSpawn = result.playerSpawn;
-      previousFloorStairsLocation = result.previousFloorStairsLocation;
-      entranceLocation = result.entranceLocation;
-      nextFloorStairsLocation = result.nextFloorStairsLocation;
-    }
-
-    if (!playerSpawn) {
-      throw new Error("Failed to determine player spawn location.");
-    }
-
-    return {
-      map: this.map,
-      rooms: rooms,
-      playerSpawn: playerSpawn,
-      gateLocation: gateLocation,
-      nextFloorStairsLocation: nextFloorStairsLocation,
-      previousFloorStairsLocation: previousFloorStairsLocation,
-      entranceLocation: entranceLocation,
-    };
+    throw new Error(
+      `Failed to generate a valid map after ${maxAttempts} attempts.`
+    );
   }
 
   private paintMap(leaf: Leaf): void {

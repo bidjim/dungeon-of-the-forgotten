@@ -3,14 +3,13 @@ import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
 import { generateWallLayers } from "../map/MapFeatureGenerator";
-import { DungeonManager } from "../managers/DungeonManager";
 import { FloorData, Vector2 } from "../types/map";
 import { InteractionManager } from "../managers/InteractionManager"; // New import
 
 const TILE_SIZE = 16; // In pixels
 
 interface GameSceneData {
-  floor: number;
+  floorData: FloorData;
   cameFrom?: "up" | "down";
 }
 
@@ -30,8 +29,9 @@ export class GameScene extends Phaser.Scene {
 
   create(data?: GameSceneData) {
     if (data) {
-      if (data.floor) {
-        this.currentFloor = data.floor;
+      if (data.floorData) {
+        this.currentFloorData = data.floorData;
+        this.currentFloor = this.currentFloorData.id;
       }
       if (data.cameFrom) {
         this.cameFrom = data.cameFrom;
@@ -66,10 +66,6 @@ export class GameScene extends Phaser.Scene {
         explorationMap: [], // Not used for debug map
       };
     } else {
-      this.currentFloorData = DungeonManager.getInstance().getFloor(
-        this.currentFloor
-      );
-
       this.map = this.make.tilemap({
         data: this.currentFloorData.tileData, // Use map data from result
         tileWidth: TILE_SIZE,
@@ -141,7 +137,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update() {
-    this.player.update();
+    this.player?.update();
     this.handlePlayerTransparency();
   }
 

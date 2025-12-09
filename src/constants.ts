@@ -100,3 +100,10 @@ export const LAYER_DEPTHS = {
   WALL_LOWER: 1,
   WALL_TOP_LOWER: 2,
 };
+
+// Pathfinding validation constants
+export const ACCEPTABLE_PATHFINDING_TILES = [
+  98 + SPRITE_OFFSET,
+  STAIRS_KEYS.UP,
+  STAIRS_KEYS.DOWN,
+];
