@@ -3,19 +3,18 @@ import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
 import { generateWallLayers } from "../map/MapFeatureGenerator";
-import { BSPMapGenerator } from "../map/BSPMapGenerator";
-import { MapGenerationResult } from "../types/map"; // New import
+import { DungeonManager } from "../DungeonManager"; // New import
+import { FloorData, Vector2 } from "../types/map"; // New import for FloorData
 
-const MAP_WIDTH = 50; // In tiles
-const MAP_HEIGHT = 50; // In tiles
 const TILE_SIZE = 16; // In pixels
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
-  private mapGenerator!: BSPMapGenerator;
   private currentFloor: number = 1; // New property
+  private currentFloorData!: FloorData; // New property to store the loaded floor data
   private map!: Phaser.Tilemaps.Tilemap;
   private fadedTiles: Phaser.Tilemaps.Tile[] = [];
+  private explorationMap: number[][] = []; // New property for Fog of War
 
   constructor() {
     super("GameScene");
@@ -35,25 +34,36 @@ export class GameScene extends Phaser.Scene {
     );
     joystick.setScrollFactor(0);
 
-    let mapResult: MapGenerationResult;
-
     if (DEBUG_MAP) {
       this.map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
       // For debug map, we'll just hardcode a player spawn and no interactions for now
-      mapResult = {
-        map: [], // Not used for debug map
-        playerSpawn: { x: 10, y: 10 }, // Default debug spawn
-        entranceLocation: { x: 10, y: 10 },
+      this.currentFloorData = {
+        id: 1,
+        width: 0, // Not used for debug map
+        height: 0, // Not used for debug map
+        tileData: [], // Not used for debug map
+        rooms: [], // Not used for debug map
+        entities: [], // Not used for debug map
+        items: [], // Not used for debug map
+        stairs: {
+          up: null,
+          down: null,
+        },
+        explorationMap: [], // Not used for debug map
       };
     } else {
-      this.mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT);
-      mapResult = this.mapGenerator.generate(this.currentFloor); // Pass currentFloor
+      this.currentFloorData = DungeonManager.getInstance().getFloor(
+        this.currentFloor
+      );
+
       this.map = this.make.tilemap({
-        data: mapResult.map, // Use map data from result
+        data: this.currentFloorData.tileData, // Use map data from result
         tileWidth: TILE_SIZE,
         tileHeight: TILE_SIZE,
       });
     }
+
+    this.explorationMap = this.currentFloorData.explorationMap;
 
     const tileset = this.map.addTilesetImage(
       ASSET_KEYS.TILESET,
@@ -74,8 +84,28 @@ export class GameScene extends Phaser.Scene {
     generateWallLayers(this.map, tileset, floorLayer);
 
     // --- Player Creation ---
-    const playerWorldX = mapResult.playerSpawn.x * TILE_SIZE + TILE_SIZE / 2;
-    const playerWorldY = mapResult.playerSpawn.y * TILE_SIZE + TILE_SIZE / 2;
+    let spawnPoint: Vector2 = {
+      x: 10,
+      y: 10,
+    }; // Useful for DEBUG_MAP
+
+    if (this.currentFloorData.stairs.up !== null) {
+      // Otherwise, spawn one tile below the stairs up location (coming from previous floor)
+      spawnPoint = {
+        x: this.currentFloorData.stairs.up.x,
+        y: this.currentFloorData.stairs.up.y + 1,
+      };
+    } else if (this.currentFloorData.stairs.down !== null) {
+      // If no stairs up, it means it's the first floor or starting a new game
+      // Spawn one tile below the stairs down location (entry point)
+      spawnPoint = {
+        x: this.currentFloorData.stairs.down.x,
+        y: this.currentFloorData.stairs.down.y + 1,
+      };
+    }
+
+    const playerWorldX = spawnPoint.x * TILE_SIZE + TILE_SIZE / 2;
+    const playerWorldY = spawnPoint.y * TILE_SIZE + TILE_SIZE / 2;
 
     this.player = new Player(
       this,
@@ -85,35 +115,15 @@ export class GameScene extends Phaser.Scene {
       cursors,
       joystick
     );
-    this.physics.add.collider(this.player, floorLayer);
 
-    // --- Interaction Objects (Gate/Stairs) ---
-    if (mapResult.gateLocation) {
-      const gateWorldX =
-        mapResult.gateLocation.x * TILE_SIZE +
-        (mapResult.gateLocation.width * TILE_SIZE) / 2;
-      const gateWorldY = mapResult.gateLocation.y * TILE_SIZE + TILE_SIZE / 2;
-      const gate = this.createInteractionObject(
-        gateWorldX,
-        gateWorldY,
-        mapResult.gateLocation.width * TILE_SIZE,
-        mapResult.gateLocation.height * TILE_SIZE,
-        "gate"
-      );
-      this.physics.add.overlap(
-        this.player,
-        gate,
-        this.onInteractionOverlap,
-        undefined,
-        this
-      );
-    }
+    this.physics.add.collider(this.player, floorLayer); // Player collider after floorLayer
 
-    if (mapResult.nextFloorStairsLocation) {
+    // --- Interaction Objects (Stairs) ---
+    if (this.currentFloorData.stairs.down) {
       const stairsWorldX =
-        mapResult.nextFloorStairsLocation.x * TILE_SIZE + TILE_SIZE / 2;
+        this.currentFloorData.stairs.down.x * TILE_SIZE + TILE_SIZE / 2;
       const stairsWorldY =
-        mapResult.nextFloorStairsLocation.y * TILE_SIZE + TILE_SIZE / 2;
+        this.currentFloorData.stairs.down.y * TILE_SIZE + TILE_SIZE / 2;
       const stairs = this.createInteractionObject(
         stairsWorldX,
         stairsWorldY,
@@ -130,11 +140,11 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
-    if (mapResult.previousFloorStairsLocation) {
+    if (this.currentFloorData.stairs.up) {
       const stairsWorldX =
-        mapResult.previousFloorStairsLocation.x * TILE_SIZE + TILE_SIZE / 2;
+        this.currentFloorData.stairs.up.x * TILE_SIZE + TILE_SIZE / 2;
       const stairsWorldY =
-        mapResult.previousFloorStairsLocation.y * TILE_SIZE + TILE_SIZE / 2;
+        this.currentFloorData.stairs.up.y * TILE_SIZE + TILE_SIZE / 2;
       const stairs = this.createInteractionObject(
         stairsWorldX,
         stairsWorldY,
@@ -235,10 +245,22 @@ export class GameScene extends Phaser.Scene {
       // TODO: Make this a proper town transition. For now, it's a placeholder.
       // this.scene.restart({ floor: 1 });
     } else if (type === "stair_up") {
+      DungeonManager.getInstance().saveFloorState(
+        this.currentFloorData.id, // Use the ID of the current floor being left
+        [], // Empty array for entities for now
+        [], // Empty array for items for now
+        this.explorationMap // Pass the current exploration map
+      );
       this.currentFloor--; // Go up one floor
       if (this.currentFloor < 1) this.currentFloor = 1; // Prevent going below floor 1
       this.scene.restart({ floor: this.currentFloor });
     } else if (type === "stair_down") {
+      DungeonManager.getInstance().saveFloorState(
+        this.currentFloorData.id, // Use the ID of the current floor being left
+        [], // Empty array for entities for now
+        [], // Empty array for items for now
+        this.explorationMap // Pass the current exploration map
+      );
       this.currentFloor++; // Go down one floor
       this.scene.restart({ floor: this.currentFloor });
     }

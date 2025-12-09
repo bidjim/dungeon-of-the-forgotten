@@ -7,26 +7,6 @@ import {
 import { BSPMapGenerator } from "./map/BSPMapGenerator"; // Assuming this is the map generator
 import { MAP_HEIGHT, MAP_WIDTH } from "./constants"; // Assuming map dimensions are in constants
 
-// Placeholder types for Entity and Item until they are properly defined
-interface Entity {
-  id: string; // Unique ID for the entity
-  type: string;
-  x: number;
-  y: number;
-  hp: number;
-  isDead: boolean;
-  getSerializableState(): EntityState; // Method to get state for saving
-}
-
-interface Item {
-  id: string; // Unique ID for the item
-  type: string;
-  x: number;
-  y: number;
-  isOpened: boolean; // For chests, etc.
-  getSerializableState(): ItemState; // Method to get state for saving
-}
-
 class DungeonManager {
   private static instance: DungeonManager;
   private floors: Map<number, FloorData>;
@@ -55,13 +35,13 @@ class DungeonManager {
     console.log(`Generating new floor for level: ${level}`);
     const mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT);
     const generationResult: MapGenerationResult = mapGenerator.generate(level); // Pass level to generate, and call generate()
+    const missingStairs =
+      (level === 1 && !generationResult.nextFloorStairsLocation) ||
+      (level !== 1 &&
+        (!generationResult.previousFloorStairsLocation ||
+          !generationResult.nextFloorStairsLocation));
 
-    // Determine stairs locations. For simplicity, let's assume they are always present after generation.
-    // In a real scenario, you might want to ensure these are always set by the generator or handle their absence.
-    if (
-      !generationResult.previousFloorStairsLocation ||
-      !generationResult.nextFloorStairsLocation
-    ) {
+    if (missingStairs) {
       throw new Error(
         `Map generation for level ${level} did not provide required stairs locations.`
       );
@@ -76,8 +56,11 @@ class DungeonManager {
       entities: [], // Initially empty, will be populated by game logic
       items: [], // Initially empty, will be populated by game logic
       stairs: {
-        up: generationResult.previousFloorStairsLocation,
-        down: generationResult.nextFloorStairsLocation,
+        up:
+          level === 1
+            ? null
+            : generationResult.previousFloorStairsLocation || null,
+        down: generationResult.nextFloorStairsLocation || null,
       },
       explorationMap: Array(MAP_HEIGHT)
         .fill(0)
@@ -98,14 +81,14 @@ class DungeonManager {
    */
   public saveFloorState(
     level: number,
-    entities: Entity[],
-    items: Item[],
+    entities: EntityState[],
+    items: ItemState[],
     exploration: number[][]
   ): void {
     if (this.floors.has(level)) {
       const currentFloor = this.floors.get(level)!;
-      currentFloor.entities = entities.map((e) => e.getSerializableState());
-      currentFloor.items = items.map((i) => i.getSerializableState());
+      currentFloor.entities = entities;
+      currentFloor.items = items;
       currentFloor.explorationMap = exploration;
       console.log(`Saved state for floor ${level}`);
     } else {
@@ -116,4 +99,4 @@ class DungeonManager {
   }
 }
 
-export { DungeonManager, Entity, Item };
+export { DungeonManager };

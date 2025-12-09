@@ -12,8 +12,8 @@ export interface FloorData {
   entities: EntityState[]; // Saved state of enemies (type, x, y, hp, isDead)
   items: ItemState[]; // Saved state of chests/pickups (isOpened)
   stairs: {
-    up: Vector2; // Position of stairs leading to prev floor
-    down: Vector2; // Position of stairs leading to next floor
+    up: Vector2 | null; // Position of stairs leading to prev floor, can be null for level 1
+    down: Vector2 | null; // Position of stairs leading to next floor, also can be null for the last floor
   };
   explorationMap: number[][]; // 0=Unseen, 1=Explored (Fog of War memory)
 }
