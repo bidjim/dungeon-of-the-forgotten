@@ -24,7 +24,7 @@ export const STAIRS_KEYS = {
   UP: tile(194),
 } as const;
 
-export const FLOOR_KEYS = new Set([tile(97), STAIRS_KEYS.UP, STAIRS_KEYS.DOWN]);
+export const FLOOR_TILE = tile(97);
 
 export const GATE_KEYS = {
   TOP_LEFT_DOOR: tile(290),
@@ -67,6 +67,18 @@ WALL_TOP_EDGE_KEYS[DIR.W] = tile(45);
 export const SIDE_WALL_KEYS: number[] = [];
 SIDE_WALL_KEYS[DIR.E] = tile(75);
 SIDE_WALL_KEYS[DIR.W] = tile(77);
+
+export const WALL_GENERATING_TILES = new Set([
+  FLOOR_TILE,
+  STAIRS_KEYS.UP,
+  STAIRS_KEYS.DOWN,
+]);
+
+export const WALKABLE_TILES = new Set([
+  FLOOR_TILE,
+  STAIRS_KEYS.UP,
+  STAIRS_KEYS.DOWN,
+]);
 
 export const ACCEPTABLE_PATHFINDING_TILES = [
   tile(97),

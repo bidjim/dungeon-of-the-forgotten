@@ -1,4 +1,4 @@
-import { EMPTY_TILE_INDEX, FLOOR_KEYS, MAP_MARGINS } from "../constants";
+import { EMPTY_TILE_INDEX, MAP_MARGINS, WALKABLE_TILES } from "../constants";
 import { Leaf } from "./Leaf";
 import { MAX_LEAF_SIZE, SPLIT_CHANCE_RATIO } from "./config";
 import { MapGenerationResult } from "../types/map";
@@ -180,7 +180,7 @@ export class BSPMapGenerator {
     if (leaf.left) this.paintMap(leaf.left);
     if (leaf.right) this.paintMap(leaf.right);
 
-    const floorTile = Array.from(FLOOR_KEYS)[0];
+    const floorTile = Array.from(WALKABLE_TILES)[0];
 
     // Paint Room
     if (leaf.room) {

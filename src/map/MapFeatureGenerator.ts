@@ -1,16 +1,10 @@
 import Phaser from "phaser";
-
-import { FLOOR_KEYS } from "../constants";
-
+import { WALL_GENERATING_TILES } from "../constants";
 import { createLayers } from "./layers/createLayers";
 import { placeGateTiles } from "./features/gates";
 import { handleStairsTile } from "./features/stairs";
-
 import { Context, NeighborIndexes } from "./features/Context";
-
-import { generateSideWalls } from "./features/walls/generateSideWalls";
-import { generateNorthWalls } from "./features/walls/generateNorthWalls";
-import { generateSouthWalls } from "./features/walls/generateSouthWalls";
+import { generateWalls } from "./features/walls/generateWalls";
 
 /**
  * Entry point for generating all wall + stair features
@@ -80,9 +74,9 @@ export const generateFeatureLayers = (
     );
 
     // -------------------------------------------------------------------------
-    // Walls only generate from floor tiles
+    // Walls only generate from floor tiles (not stairs!)
     // -------------------------------------------------------------------------
-    if (!FLOOR_KEYS.has(tile.index)) return;
+    if (!WALL_GENERATING_TILES.has(tile.index)) return;
 
     const ctx: Context = {
       tile,
@@ -90,8 +84,7 @@ export const generateFeatureLayers = (
       layers,
     };
 
-    generateSideWalls(ctx);
-    generateNorthWalls(ctx);
-    generateSouthWalls(ctx);
+    // Single unified wall generator
+    generateWalls(ctx);
   });
 };
