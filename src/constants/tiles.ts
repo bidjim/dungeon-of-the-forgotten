@@ -4,61 +4,72 @@ import { DEBUG_MAP } from "./map";
 export const EMPTY_TILE_INDEX = 0;
 
 // Iterates over an object and returns a new one with all values -1
-const SPRITE_OFFSET = DEBUG_MAP ? 0 : -1;
+const SPRITE_OFFSET = DEBUG_MAP ? 1 : 0;
 
-export const FLOOR_KEYS = new Set([98 + SPRITE_OFFSET]);
+const tile = (index: number): number => index + SPRITE_OFFSET;
 
-export const GATE_KEYS = {
-  TOP_LEFT_DOOR: 291 + SPRITE_OFFSET,
-  TOP_RIGHT_DOOR: 292 + SPRITE_OFFSET,
-  MIDDLE_LEFT_DOOR: 326 + SPRITE_OFFSET,
-  MIDDLE_LEFT_BRICK: 322 + SPRITE_OFFSET,
-  MIDDLE_RIGHT_DOOR: 327 + SPRITE_OFFSET,
-  MIDDLE_RIGHT_BRICK: 325 + SPRITE_OFFSET,
-  BOTTOM_LEFT_DOOR: 358 + SPRITE_OFFSET,
-  BOTTOM_RIGHT_DOOR: 359 + SPRITE_OFFSET,
-} as const;
-
-export const WALL_KEYS = {
-  E: 2 + SPRITE_OFFSET,
-  WE: 3 + SPRITE_OFFSET,
-  W: 4 + SPRITE_OFFSET,
-} as const;
-
-export const WALL_TOP_KEYS = {
-  E: 12 + SPRITE_OFFSET,
-  WE: 13 + SPRITE_OFFSET,
-  W: 14 + SPRITE_OFFSET,
-  BOTTOM_RIGHT_LONG: 80 + SPRITE_OFFSET,
-  BOTTOM_RIGHT_DOT: 44 + SPRITE_OFFSET,
-  BOTTOM_LEFT_LONG: 79 + SPRITE_OFFSET,
-  BOTTOM_LEFT_DOT: 46 + SPRITE_OFFSET,
-  TOP_LEFT_LONG: 47 + SPRITE_OFFSET,
-  TOP_RIGHT_LONG: 48 + SPRITE_OFFSET,
-  BOTTOM_RIGHT_HOLLOW: 112 + SPRITE_OFFSET,
-  BOTTOM_LEFT_HOLLOW: 111 + SPRITE_OFFSET,
-  BOTTOM_LEFT_HOLLOW_TOP: 176 + SPRITE_OFFSET,
-  BOTTOM: 109 + SPRITE_OFFSET,
-  LEFT_TOP_RIGHT: 49 + SPRITE_OFFSET,
-  LEFT_BOTTOM_RIGHT: 81 + SPRITE_OFFSET,
-} as const;
-
-export const SIDE_WALL_KEYS = {
-  RIGHT: 76 + SPRITE_OFFSET,
-  RIGHT_HOLLOW: 108 + SPRITE_OFFSET,
-  LEFT: 78 + SPRITE_OFFSET,
-  LEFT_HOLLOW: 110 + SPRITE_OFFSET,
-  BOTTOM_LEFT: 140 + SPRITE_OFFSET,
-  BOTTOM_RIGHT: 142 + SPRITE_OFFSET,
+export const DIR = {
+  N: 1,
+  NE: 2,
+  E: 4,
+  SE: 8,
+  S: 16,
+  SW: 32,
+  W: 64,
+  NW: 128,
 } as const;
 
 export const STAIRS_KEYS = {
-  DOWN: 230 + SPRITE_OFFSET,
-  UP: 195 + SPRITE_OFFSET,
+  DOWN: tile(229),
+  UP: tile(194),
 } as const;
 
+export const FLOOR_KEYS = new Set([tile(97), STAIRS_KEYS.UP, STAIRS_KEYS.DOWN]);
+
+export const GATE_KEYS = {
+  TOP_LEFT_DOOR: tile(290),
+  TOP_RIGHT_DOOR: tile(291),
+  MIDDLE_LEFT_DOOR: tile(325),
+  MIDDLE_LEFT_BRICK: tile(321),
+  MIDDLE_RIGHT_DOOR: tile(326),
+  MIDDLE_RIGHT_BRICK: tile(324),
+  BOTTOM_LEFT_DOOR: tile(357),
+  BOTTOM_RIGHT_DOOR: tile(358),
+} as const;
+
+export const WALL_KEYS: number[] = [];
+WALL_KEYS[DIR.E] = tile(1);
+WALL_KEYS[DIR.E | DIR.W] = tile(2);
+WALL_KEYS[DIR.W] = tile(3);
+
+export const WALL_LOWER_KEYS: number[] = [];
+WALL_LOWER_KEYS[DIR.E] = tile(139);
+WALL_LOWER_KEYS[DIR.W] = tile(141);
+
+export const WALL_UPPER_TOP_KEYS: number[] = [];
+WALL_UPPER_TOP_KEYS[DIR.NE | DIR.NW | DIR.E | DIR.W] = tile(80);
+WALL_UPPER_TOP_KEYS[DIR.NE | DIR.E] = tile(79);
+WALL_UPPER_TOP_KEYS[DIR.NW | DIR.W] = tile(78);
+WALL_UPPER_TOP_KEYS[DIR.E | DIR.W] = tile(12);
+WALL_UPPER_TOP_KEYS[DIR.E] = tile(12);
+WALL_UPPER_TOP_KEYS[DIR.W] = tile(12);
+
+export const WALL_LOWER_TOP_KEYS: number[] = [];
+WALL_LOWER_TOP_KEYS[DIR.SE | DIR.SW | DIR.E | DIR.W] = tile(48);
+WALL_LOWER_TOP_KEYS[DIR.SE | DIR.E | DIR.W] = tile(111);
+WALL_LOWER_TOP_KEYS[DIR.SW | DIR.E | DIR.W] = tile(110);
+WALL_LOWER_TOP_KEYS[DIR.E | DIR.W] = tile(108);
+
+export const WALL_TOP_EDGE_KEYS: number[] = [];
+WALL_TOP_EDGE_KEYS[DIR.E] = tile(43);
+WALL_TOP_EDGE_KEYS[DIR.W] = tile(45);
+
+export const SIDE_WALL_KEYS: number[] = [];
+SIDE_WALL_KEYS[DIR.E] = tile(75);
+SIDE_WALL_KEYS[DIR.W] = tile(77);
+
 export const ACCEPTABLE_PATHFINDING_TILES = [
-  98 + SPRITE_OFFSET,
+  tile(97),
   STAIRS_KEYS.UP,
   STAIRS_KEYS.DOWN,
 ] as const;

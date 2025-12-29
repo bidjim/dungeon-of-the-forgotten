@@ -2,7 +2,7 @@ import { ASSET_KEYS, DEBUG_MAP } from "../constants";
 import Phaser from "phaser";
 import { Player } from "../Player";
 import { createJoystickConfig } from "../config/joystickConfig";
-import { generateWallLayers } from "../map/MapFeatureGenerator";
+import { generateFeatureLayers } from "../map/MapFeatureGenerator";
 import { FloorData, Vector2 } from "../types/map";
 import { InteractionManager } from "../managers/InteractionManager"; // New import
 import VirtualJoyStickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-plugin.js";
@@ -49,22 +49,6 @@ export class GameScene extends Phaser.Scene {
 
     if (DEBUG_MAP) {
       this.map = this.make.tilemap({ key: ASSET_KEYS.DUNGEON_TILES });
-      // For debug map, we'll just hardcode a player spawn and no interactions for now
-      this.currentFloorData = {
-        id: 1,
-        width: 0, // Not used for debug map
-        height: 0, // Not used for debug map
-        tileData: [], // Not used for debug map
-        rooms: [], // Not used for debug map
-        entities: [], // Not used for debug map
-        items: [], // Not used for debug map
-        stairs: {
-          up: null,
-          down: null,
-        },
-        gate: null,
-        explorationMap: [], // Not used for debug map
-      };
     } else {
       this.map = this.make.tilemap({
         data: this.currentFloorData.tileData, // Use map data from result
@@ -91,7 +75,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.bounds.width = this.map.widthInPixels;
     this.physics.world.bounds.height = this.map.heightInPixels;
 
-    generateWallLayers(this.map, tileset, floorLayer);
+    generateFeatureLayers(this.map, tileset, floorLayer);
 
     // --- Player Creation ---
     let spawnPoint: Vector2;

@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { FloorData } from "../types/map";
 import { DungeonManager } from "../managers/DungeonManager";
+import { DEBUG_MAP } from "../constants";
 
 interface LoadingSceneData {
   floor: number;
@@ -99,8 +100,29 @@ export class LoadingScene extends Phaser.Scene {
     // Show progress animation
     this.animateProgress();
 
+    let floorData;
+
     // Load the floor data
-    const floorData = await DungeonManager.getInstance().getFloor(floor);
+    if (DEBUG_MAP) {
+      // For debug map, we'll just hardcode a player spawn and no interactions for now
+      floorData = {
+        id: 1,
+        width: 0, // Not used for debug map
+        height: 0, // Not used for debug map
+        tileData: [], // Not used for debug map
+        rooms: [], // Not used for debug map
+        entities: [], // Not used for debug map
+        items: [], // Not used for debug map
+        stairs: {
+          up: null,
+          down: null,
+        },
+        gate: null,
+        explorationMap: [], // Not used for debug map
+      };
+    } else {
+      floorData = await DungeonManager.getInstance().getFloor(floor);
+    }
 
     return floorData;
   }

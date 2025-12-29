@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { generateWallLayers } from "./MapFeatureGenerator";
+import { generateFeatureLayers } from "./MapFeatureGenerator";
 
 // 1. Mock the constants used in the source file
 vi.mock("../constants", () => ({
@@ -25,6 +25,14 @@ vi.mock("../constants", () => ({
     BOTTOM_RIGHT_DOOR: 902,
   },
   STAIRS_KEYS: { UP: 999 },
+  LAYER_DEPTHS: {
+    STAIRS: -1,
+    WALL_SIDE: 0,
+    WALL_UPPER: 0,
+    WALL_TOP_UPPER: 2,
+    WALL_LOWER: 1,
+    WALL_TOP_LOWER: 2,
+  },
 }));
 
 // Import constants locally to use in assertions
@@ -106,7 +114,7 @@ describe("MapFeatureGenerator", () => {
     mockFloorLayer.layer.height = 3;
 
     // Act
-    generateWallLayers(mockMap, mockTileset, mockFloorLayer);
+    generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
 
     const wallUpper = layers["Wall Upper"];
     const wallLower = layers["Wall Lower"];
@@ -145,7 +153,7 @@ describe("MapFeatureGenerator", () => {
     mockFloorLayer.layer.height = 1;
 
     // Act
-    generateWallLayers(mockMap, mockTileset, mockFloorLayer);
+    generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
 
     // Assert
     const wallTopUpper = layers["Wall Top Upper"];
