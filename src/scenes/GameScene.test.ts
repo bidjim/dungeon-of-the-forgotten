@@ -38,6 +38,12 @@ vi.mock("phaser", () => {
       replaceByIndex: vi.fn(),
       setCollision: vi.fn(),
     }),
+    // Add getLayer to satisfy MapManager.init
+    getLayer: vi.fn().mockReturnValue({
+      tilemapLayer: {
+        getTileAt: vi.fn(),
+      },
+    }),
     worldToTileX: vi.fn().mockReturnValue(0),
     worldToTileY: vi.fn().mockReturnValue(0),
     getTileAt: vi.fn(),
@@ -50,11 +56,17 @@ vi.mock("phaser", () => {
       Scene: class {
         input: any;
         plugins: any;
+        scene: any; // Added for InteractionManager transitions
 
-        constructor(key: string) {
+        constructor() {
           this.input = {
             keyboard: {
-              createCursorKeys: vi.fn().mockReturnValue({}),
+              createCursorKeys: vi.fn().mockReturnValue({
+                up: {},
+                down: {},
+                left: {},
+                right: {},
+              }),
             },
           };
           this.plugins = {
@@ -64,9 +76,19 @@ vi.mock("phaser", () => {
               }),
             }),
           };
+          // Mock the scene manager for transitions
+          this.scene = {
+            start: vi.fn(),
+          };
         }
 
-        add = { existing: vi.fn(), circle: vi.fn(), zone: vi.fn() };
+        add = {
+          existing: vi.fn(),
+          circle: vi.fn(),
+          zone: vi.fn().mockReturnValue({
+            body: {},
+          }),
+        };
         make = { tilemap: vi.fn().mockReturnValue(mockTilemap) };
         physics = {
           add: {
@@ -78,6 +100,7 @@ vi.mock("phaser", () => {
               setImmovable: vi.fn(),
               setVisible: vi.fn(),
               setData: vi.fn(),
+              body: {},
             }),
           },
           world: { bounds: {} },
