@@ -104,4 +104,61 @@ describe("BSPMapGenerator", () => {
       expect(isRoomReachable).toBe(true);
     }
   });
+
+  it("should ensure all generated rooms are accessible from the spawn point", async () => {
+    // Added async
+    const generator = new BSPMapGenerator(WIDTH, HEIGHT);
+    const result = await generator.generate(1); // Added await
+    const map = result.map;
+    const spawn = result.playerSpawn;
+
+    const collectedRooms: Leaf[] = [];
+    (generator as any).getAllRooms((generator as any).root, collectedRooms);
+
+    const visited = new Set<string>();
+    const queue: { x: number; y: number }[] = [spawn];
+    visited.add(`${spawn.x},${spawn.y}`);
+
+    const directions = [
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+    ];
+
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+
+      for (const dir of directions) {
+        const nx = curr.x + dir.x;
+        const ny = curr.y + dir.y;
+
+        if (nx >= 0 && nx < WIDTH && ny >= 0 && ny < HEIGHT) {
+          // A tile is walkable if it is NOT EMPTY_TILE_INDEX
+          // This includes floors, corridors, stairs, and doors.
+          if (map[ny][nx] !== EMPTY_TILE_INDEX && !visited.has(`${nx},${ny}`)) {
+            visited.add(`${nx},${ny}`);
+            queue.push({ x: nx, y: ny });
+          }
+        }
+      }
+    }
+
+    for (const leaf of collectedRooms) {
+      if (!leaf.room) continue;
+
+      let isRoomReachable = false;
+      for (let y = leaf.room.y; y < leaf.room.y + leaf.room.h; y++) {
+        for (let x = leaf.room.x; x < leaf.room.x + leaf.room.w; x++) {
+          if (visited.has(`${x},${y}`)) {
+            isRoomReachable = true;
+            break;
+          }
+        }
+        if (isRoomReachable) break;
+      }
+
+      expect(isRoomReachable).toBe(true);
+    }
+  });
 });
