@@ -258,9 +258,9 @@ export class Leaf {
         // verticalDistance === 0
         // Only a single horizontal segment is needed to connect them.
         this.halls.push({
-          x: corridorEndPoint.x,
+          x: Math.min(corridorStartPoint.x, corridorEndPoint.x), // Use min for safety
           y: corridorEndPoint.y,
-          w: Math.abs(horizontalDistance),
+          w: Math.abs(horizontalDistance) + 2, // Added thickness
           h: 2,
         });
       }
@@ -304,9 +304,9 @@ export class Leaf {
         // verticalDistance === 0
         // Only a single horizontal segment is needed.
         this.halls.push({
-          x: corridorStartPoint.x,
+          x: Math.min(corridorStartPoint.x, corridorEndPoint.x), // Use min for safety
           y: corridorStartPoint.y,
-          w: Math.abs(horizontalDistance),
+          w: Math.abs(horizontalDistance) + 2, // Added thickness
           h: 2,
         });
       }
@@ -319,9 +319,9 @@ export class Leaf {
         // Only a single vertical segment is needed.
         this.halls.push({
           x: corridorEndPoint.x,
-          y: corridorEndPoint.y,
+          y: Math.min(corridorStartPoint.y, corridorEndPoint.y), // Use min for safety
           w: 2,
-          h: Math.abs(verticalDistance),
+          h: Math.abs(verticalDistance) + 2, // Added thickness
         });
       }
       // Subcase 3.2: The corridorEndPoint is below the corridorStartPoint (verticalDistance is positive).
@@ -329,9 +329,9 @@ export class Leaf {
         // Only a single vertical segment is needed.
         this.halls.push({
           x: corridorStartPoint.x,
-          y: corridorStartPoint.y,
+          y: Math.min(corridorStartPoint.y, corridorEndPoint.y), // Use min for safety
           w: 2,
-          h: Math.abs(verticalDistance),
+          h: Math.abs(verticalDistance) + 2, // Added thickness
         });
       }
       // Subcase 3.3: Both horizontalDistance and verticalDistance are zero.
