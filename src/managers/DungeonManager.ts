@@ -10,6 +10,7 @@ import { MAP_HEIGHT, MAP_WIDTH } from "../constants"; // Assuming map dimensions
 class DungeonManager {
   private static instance: DungeonManager;
   private floors: Map<number, FloorData>;
+  private generationRequests: Map<number, Promise<FloorData>> = new Map();
 
   private constructor() {
     this.floors = new Map<number, FloorData>();
@@ -28,52 +29,64 @@ class DungeonManager {
    * @returns FloorData for the specified level.
    */
   public async getFloor(level: number): Promise<FloorData> {
-    if (this.floors.has(level)) {
-      return this.floors.get(level)!;
+    const existingFloor = this.floors.get(level);
+    if (existingFloor) return existingFloor;
+
+    if (this.generationRequests.has(level)) {
+      return this.generationRequests.get(level)!;
     }
 
-    console.log(`Generating new floor for level: ${level}`);
-    const mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT);
-    const generationResult: MapGenerationResult = await mapGenerator.generate(
-      level
-    ); // Pass level to generate, and call generate()
-    const missingStairs =
-      (level === 1 && !generationResult.nextFloorStairsLocation) ||
-      (level !== 1 &&
-        (!generationResult.previousFloorStairsLocation ||
-          !generationResult.nextFloorStairsLocation));
+    const generationPromise = (async () => {
+      try {
+        console.log(`Generating new floor for level: ${level}`);
+        const mapGenerator = new BSPMapGenerator(MAP_WIDTH, MAP_HEIGHT);
+        const generationResult: MapGenerationResult =
+          await mapGenerator.generate(level);
 
-    if (missingStairs) {
-      throw new Error(
-        `Map generation for level ${level} did not provide required stairs locations.`
-      );
-    }
+        const missingStairs =
+          (level === 1 && !generationResult.nextFloorStairsLocation) ||
+          (level !== 1 &&
+            (!generationResult.previousFloorStairsLocation ||
+              !generationResult.nextFloorStairsLocation));
 
-    const newFloor: FloorData = {
-      id: level,
-      width: MAP_WIDTH,
-      height: MAP_HEIGHT,
-      tileData: generationResult.map,
-      rooms: generationResult.rooms, // Use rooms directly from generationResult
-      entities: [], // Initially empty, will be populated by game logic
-      items: [], // Initially empty, will be populated by game logic
-      stairs: {
-        up:
-          level === 1
-            ? null
-            : generationResult.previousFloorStairsLocation || null,
-        down: generationResult.nextFloorStairsLocation || null,
-      },
-      gate: generationResult.gateLocation || null,
-      explorationMap: Array(MAP_HEIGHT)
-        .fill(0)
-        .map(() => Array(MAP_WIDTH).fill(0)), // All unseen
-    };
+        if (missingStairs) {
+          throw new Error(
+            `Map generation for level ${level} did not provide required stairs locations.`
+          );
+        }
 
-    newFloor.entities = this.generateInitialEntities(newFloor);
+        const newFloor: FloorData = {
+          id: level,
+          width: MAP_WIDTH,
+          height: MAP_HEIGHT,
+          tileData: generationResult.map,
+          rooms: generationResult.rooms,
+          entities: [],
+          items: [],
+          stairs: {
+            up:
+              level === 1
+                ? null
+                : generationResult.previousFloorStairsLocation || null,
+            down: generationResult.nextFloorStairsLocation || null,
+          },
+          gate: generationResult.gateLocation || null,
+          explorationMap: Array(MAP_HEIGHT)
+            .fill(0)
+            .map(() => Array(MAP_WIDTH).fill(0)),
+        };
 
-    this.floors.set(level, newFloor);
-    return newFloor;
+        newFloor.entities = this.generateInitialEntities(newFloor);
+
+        this.floors.set(level, newFloor);
+        return newFloor;
+      } finally {
+        this.generationRequests.delete(level);
+      }
+    })();
+
+    this.generationRequests.set(level, generationPromise);
+    return generationPromise;
   }
 
   /**
