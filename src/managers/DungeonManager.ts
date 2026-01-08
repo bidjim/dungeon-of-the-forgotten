@@ -70,6 +70,8 @@ class DungeonManager {
         .map(() => Array(MAP_WIDTH).fill(0)), // All unseen
     };
 
+    newFloor.entities = this.generateInitialEntities(newFloor);
+
     this.floors.set(level, newFloor);
     return newFloor;
   }
@@ -99,6 +101,11 @@ class DungeonManager {
         `Attempted to save state for non-existent floor ${level}. This should not happen if getFloor is called first.`
       );
     }
+  }
+
+  private generateInitialEntities(floor: FloorData): EntityState[] {
+    // Logic to pick random rooms and spawn monsters
+    return [];
   }
 }
 
