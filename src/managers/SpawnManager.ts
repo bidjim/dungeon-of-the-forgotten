@@ -1,4 +1,5 @@
 import { FloorData, Vector2 } from "../types/map";
+import { EMPTY_TILE_INDEX } from "../constants/tiles";
 
 export class SpawnManager {
   static getSpawnPoint(
@@ -36,7 +37,7 @@ export class SpawnManager {
   private static isWalkable(data: FloorData, x: number, y: number): boolean {
     if (y < 0 || y >= data.tileData.length) return false;
     if (x < 0 || x >= data.tileData[y].length) return false;
-    return data.tileData[y][x] !== 0;
+    return data.tileData[y][x] !== EMPTY_TILE_INDEX;
   }
 
   private static getRoomCenter(data: FloorData, roomIndex: number): Vector2 {
