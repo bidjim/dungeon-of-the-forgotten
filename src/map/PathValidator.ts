@@ -20,31 +20,25 @@ export class PathValidator {
   ): Promise<boolean> {
     return new Promise((resolve) => {
       const astar = new EasyStar.js();
-
-      // Convert the map to a format EasyStar can understand
-      const grid = map.map((row) => [...row]);
-
-      astar.setGrid(grid);
+      astar.setGrid(map);
       astar.setAcceptableTiles(ACCEPTABLE_PATHFINDING_TILES);
 
-      // Find path with a callback
-      astar.findPath(startX, startY, endX, endY, (path) => {
-        if (path === null) {
-          // No path exists
+      let isResolved = false;
+      const timer = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
           resolve(false);
-        } else {
-          // Path exists
-          resolve(true);
+        }
+      }, 2000);
+
+      astar.findPath(startX, startY, endX, endY, (path) => {
+        if (!isResolved) {
+          isResolved = true;
+          clearTimeout(timer);
+          resolve(path !== null);
         }
       });
-
-      // Calculate the path with a timeout to prevent hanging
       astar.calculate();
-
-      // Add a timeout to prevent infinite hanging
-      setTimeout(() => {
-        resolve(false); // Assume no path if it takes too long
-      }, 5000); // 5 second timeout
     });
   }
 
