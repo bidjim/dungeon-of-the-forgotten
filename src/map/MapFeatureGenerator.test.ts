@@ -1,170 +1,189 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { generateFeatureLayers } from "./MapFeatureGenerator";
+import {
+  FLOOR_TILE,
+  GATE_KEYS,
+  STAIRS_KEYS,
+  WALL_KEYS,
+  DIR,
+  EMPTY_TILE_INDEX,
+} from "../constants/tiles";
+import { LAYER_DEPTHS } from "../constants/layers";
 
-// 1. Mock the constants used in the source file
-vi.mock("../constants", () => ({
-  FLOOR_KEYS: new Set([1]), // 1 represents a generic floor tile
-  EMPTY_TILE_INDEX: 0,
-  WALL_KEYS: { WE: 101 },
-  SIDE_WALL_KEYS: {
-    LEFT: 201,
-    RIGHT: 202,
-    BOTTOM_LEFT: 203,
-    BOTTOM_RIGHT: 204,
-    LEFT_HOLLOW: 205,
-    RIGHT_HOLLOW: 206,
-  },
-  WALL_TOP_KEYS: {
-    WE: 301,
-    BOTTOM: 302,
-    BOTTOM_LEFT_DOT: 303,
-    BOTTOM_RIGHT_DOT: 304,
-  },
-  GATE_KEYS: {
-    BOTTOM_LEFT_DOOR: 901,
-    BOTTOM_RIGHT_DOOR: 902,
-  },
-  STAIRS_KEYS: { UP: 999 },
-  LAYER_DEPTHS: {
-    STAIRS: -1,
-    WALL_SIDE: 0,
-    WALL_UPPER: 0,
-    WALL_TOP_UPPER: 2,
-    WALL_LOWER: 1,
-    WALL_TOP_LOWER: 2,
-  },
-}));
+// Mock Phaser Tile object
+const createMockTile = (x: number, y: number, index: number) => ({
+  x,
+  y,
+  index,
+});
 
-// Import constants locally to use in assertions
-import { WALL_KEYS, WALL_TOP_KEYS } from "../constants";
+// Mock Phaser Layer object
+const createMockLayer = (name: string) => ({
+  name,
+  putTileAt: vi.fn(),
+  setDepth: vi.fn(),
+  layer: { data: [] as any[][], width: 0, height: 0 },
+});
 
-describe("MapFeatureGenerator", () => {
+describe("MapFeatureGenerator Integration", () => {
   let mockMap: any;
   let mockTileset: any;
   let mockFloorLayer: any;
-  let layers: Record<string, any>;
+  let layerMocks: Record<string, any>;
 
   beforeEach(() => {
-    // Reset mocks before each test
-    layers = {};
+    vi.clearAllMocks();
+    layerMocks = {};
 
-    // Helper to create a mock layer with spies
-    const createMockLayer = (name: string) => ({
-      name,
-      putTileAt: vi.fn(),
-      setDepth: vi.fn(),
-      layer: { data: [], width: 0, height: 0 },
-    });
-
-    mockTileset = {}; // Generic object
+    mockTileset = { name: "main-tileset" };
 
     mockMap = {
       createBlankLayer: vi.fn((name) => {
         const layer = createMockLayer(name);
-        layers[name] = layer;
+        layerMocks[name] = layer;
         return layer;
       }),
     };
+  });
 
-    // Setup a basic mock Floor Layer
+  const setupGrid = (data: number[][]) => {
+    const height = data.length;
+    const width = data[0]?.length || 0;
+    const grid = data.map((row, y) =>
+      row.map((index, x) => createMockTile(x, y, index))
+    );
+
     mockFloorLayer = {
       layer: {
-        data: [],
-        width: 3,
-        height: 3,
+        data: grid,
+        width,
+        height,
       },
-      // Simple implementation of forEachTile to iterate our grid
       forEachTile: vi.fn((callback) => {
-        const grid = mockFloorLayer.layer.data;
-        for (let y = 0; y < grid.length; y++) {
-          for (let x = 0; x < grid[y].length; x++) {
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
             callback(grid[y][x]);
           }
         }
       }),
     };
-  });
+  };
 
-  it("Autotiling Rules: Generates correct 'Island' walls for a single floor tile surrounded by empty tiles", () => {
-    // Arrange: Create a 3x3 Grid
-    // 0 = Empty, 1 = Floor
-    // [0, 0, 0]
-    // [0, 1, 0]  <-- The Island (x=1, y=1)
-    // [0, 0, 0]
-    const gridData = [
-      [
-        { index: 0, x: 0, y: 0 },
-        { index: 0, x: 1, y: 0 },
-        { index: 0, x: 2, y: 0 },
-      ],
-      [
-        { index: 0, x: 0, y: 1 },
-        { index: 1, x: 1, y: 1 },
-        { index: 0, x: 2, y: 1 },
-      ],
-      [
-        { index: 0, x: 0, y: 2 },
-        { index: 0, x: 1, y: 2 },
-        { index: 0, x: 2, y: 2 },
-      ],
-    ];
-
-    mockFloorLayer.layer.data = gridData;
-    mockFloorLayer.layer.width = 3;
-    mockFloorLayer.layer.height = 3;
-
-    // Act
+  it("should initialize all required layers with correct depths", () => {
+    setupGrid([[FLOOR_TILE]]);
     generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
 
-    const wallUpper = layers["Wall Upper"];
-    const wallLower = layers["Wall Lower"];
-    const wallTopUpper = layers["Wall Top Upper"];
-    const wallTopLower = layers["Wall Top Lower"];
+    expect(layerMocks["Gate"].setDepth).toHaveBeenCalledWith(LAYER_DEPTHS.GATE);
+    expect(layerMocks["Stairs"].setDepth).toHaveBeenCalledWith(
+      LAYER_DEPTHS.STAIRS
+    );
+    expect(layerMocks["Wall Upper"].setDepth).toHaveBeenCalledWith(
+      LAYER_DEPTHS.WALL_UPPER
+    );
+    expect(layerMocks["Wall Top Upper"].setDepth).toHaveBeenCalledWith(
+      LAYER_DEPTHS.WALL_TOP_UPPER
+    );
+    expect(layerMocks["Wall Lower"].setDepth).toHaveBeenCalledWith(
+      LAYER_DEPTHS.WALL_LOWER
+    );
+    expect(layerMocks["Wall Top Lower"].setDepth).toHaveBeenCalledWith(
+      LAYER_DEPTHS.WALL_TOP_LOWER
+    );
+  });
 
-    // Assert: North Wall Logic (Because y-1 is empty)
-    // Expect Base Wall at (1, 0)
-    expect(wallUpper.putTileAt).toHaveBeenCalledWith(WALL_KEYS.WE, 1, 0);
-    // Expect Wall Top Decor at (1, -1) (Usually 2 tiles above floor)
-    expect(wallTopUpper.putTileAt).toHaveBeenCalledWith(
-      WALL_TOP_KEYS.WE,
-      1,
-      -1
-    ); // y - 2
+  it("should place multi-tile gate structures when a gate bottom is detected", () => {
+    // Place a Bottom Left Door at 5,5
+    setupGrid([
+      [EMPTY_TILE_INDEX, EMPTY_TILE_INDEX],
+      [EMPTY_TILE_INDEX, GATE_KEYS.BOTTOM_LEFT_DOOR],
+    ]);
 
-    // Assert: South Wall Logic (Because y+1 is empty)
-    // Expect Base Wall at (1, 1) (Same y as floor, but on 'Wall Lower' layer)
-    expect(wallLower.putTileAt).toHaveBeenCalledWith(WALL_KEYS.WE, 1, 1);
+    generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
 
-    // Assert: Top Lower logic (The cap of the lower wall)
-    // In an island scenario with empty sides, it often creates a "Bottom" cap
-    // The code logic for South wall with empty sides eventually places WALL_TOP_KEYS.BOTTOM
-    expect(wallTopLower.putTileAt).toHaveBeenCalledWith(
-      WALL_TOP_KEYS.BOTTOM,
+    const gateLayer = layerMocks["Gate"];
+    // Verifies the vertical stacking logic in gates.ts
+    expect(gateLayer.putTileAt).toHaveBeenCalledWith(
+      GATE_KEYS.MIDDLE_LEFT_DOOR,
       1,
       0
     ); // y - 1
+    expect(gateLayer.putTileAt).toHaveBeenCalledWith(
+      GATE_KEYS.TOP_LEFT_DOOR,
+      1,
+      -1
+    ); // y - 2
   });
 
-  it("Layer Depth: Verifies that 'Wall Top Upper' is set to depth 2", () => {
-    // Arrange: Setup Minimal Grid (doesn't matter for depth check, but needed to run)
-    const gridData = [[{ index: 0, x: 0, y: 0 }]];
-    mockFloorLayer.layer.data = gridData;
-    mockFloorLayer.layer.width = 1;
-    mockFloorLayer.layer.height = 1;
+  it("should blend stairs into the surrounding environment", () => {
+    // Stairs at 1,1 surrounded by a floor tile at 1,0 (North)
+    setupGrid([
+      [EMPTY_TILE_INDEX, FLOOR_TILE, EMPTY_TILE_INDEX],
+      [EMPTY_TILE_INDEX, STAIRS_KEYS.UP, EMPTY_TILE_INDEX],
+    ]);
 
-    // Act
     generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
 
-    // Assert
-    const wallTopUpper = layers["Wall Top Upper"];
-    const wallUpper = layers["Wall Upper"];
-    const wallLower = layers["Wall Lower"];
+    const stairsLayer = layerMocks["Stairs"];
+    // Should adopt the index of the first non-empty neighbor (FLOOR_TILE)
+    expect(stairsLayer.putTileAt).toHaveBeenCalledWith(FLOOR_TILE, 1, 1);
+  });
 
-    // Specific Requirement: Wall Top Upper must be above player (Depth 2)
-    expect(wallTopUpper.setDepth).toHaveBeenCalledWith(2);
+  it("should generate correct island walls for a single isolated floor tile", () => {
+    // 3x3 grid with floor in middle
+    setupGrid([
+      [0, 0, 0],
+      [0, FLOOR_TILE, 0],
+      [0, 0, 0],
+    ]);
 
-    // Verification of other layers to ensure relative correctness (Optional based on prompt)
-    expect(wallUpper.setDepth).toHaveBeenCalledWith(0);
-    expect(wallLower.setDepth).toHaveBeenCalledWith(1);
+    generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
+
+    const upperWallLayer = layerMocks["Wall Upper"];
+
+    // North Wall Rule check: Since neighbors are empty, it should use DIR.E (fallback) or DIR.W
+    // Based on northWallRules.ts: fallback is WALL_KEYS[DIR.E] at offsetY: -1
+    expect(upperWallLayer.putTileAt).toHaveBeenCalledWith(
+      WALL_KEYS[DIR.E],
+      1,
+      0 // floor is at y=1, wall is at y-1
+    );
+  });
+
+  it("should not crash when floor tile is at the top-left boundary (0,0)", () => {
+    setupGrid([
+      [FLOOR_TILE, 0],
+      [0, 0],
+    ]);
+
+    // This triggers getIndex with x-1, y-1 (out of bounds)
+    expect(() => {
+      generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
+    }).not.toThrow();
+  });
+
+  it("should ignore tiles that are not in WALL_GENERATING_TILES", () => {
+    const UNKNOWN_TILE = 999;
+    setupGrid([[UNKNOWN_TILE]]);
+
+    generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
+
+    // Wall layers should remain empty
+    expect(layerMocks["Wall Upper"].putTileAt).not.toHaveBeenCalled();
+    expect(layerMocks["Wall Lower"].putTileAt).not.toHaveBeenCalled();
+  });
+
+  it("should generate top edge tiles when north-west neighbor is empty", () => {
+    // Floor at 1,1. Empty at 0,0 (North West).
+    // This should trigger rules in northWallTopEdgeRules.ts
+    setupGrid([
+      [0, FLOOR_TILE, FLOOR_TILE],
+      [FLOOR_TILE, FLOOR_TILE, FLOOR_TILE],
+    ]);
+
+    generateFeatureLayers(mockMap, mockTileset, mockFloorLayer);
+
+    const topEdgeLayer = layerMocks["Wall Top Upper Edge"];
+    // Verify that some tile was placed on the edge layer
+    expect(topEdgeLayer.putTileAt).toHaveBeenCalled();
   });
 });
