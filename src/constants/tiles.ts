@@ -80,7 +80,7 @@ export const WALKABLE_TILES = new Set([
   STAIRS_KEYS.DOWN,
 ]);
 
-export const ACCEPTABLE_PATHFINDING_TILES = [
+export const ACCEPTABLE_PATHFINDING_TILES: number[] = [
   tile(97),
   STAIRS_KEYS.UP,
   STAIRS_KEYS.DOWN,
