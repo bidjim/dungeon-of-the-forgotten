@@ -7,17 +7,17 @@ describe("BSPMapGenerator", () => {
   const WIDTH = 50;
   const HEIGHT = 40;
 
-  it("should generate a map with the correct dimensions", () => {
+  it("should generate a map with the correct dimensions", async () => {
     const generator = new BSPMapGenerator(WIDTH, HEIGHT);
-    const result = generator.generate(1);
+    const result = await generator.generate(1);
 
     expect(result.map.length).toBe(HEIGHT);
     expect(result.map.every((row) => row.length === WIDTH)).toBe(true);
   });
 
-  it("should return the correct number of leaves via getAllRooms", () => {
+  it("should return the correct number of leaves via getAllRooms", async () => {
     const generator = new BSPMapGenerator(WIDTH, HEIGHT);
-    generator.generate(1);
+    await generator.generate(1);
 
     // Access private properties/methods via casting to any
     const root = (generator as any).root as Leaf;
@@ -41,11 +41,11 @@ describe("BSPMapGenerator", () => {
     expect(collectedRooms.length).toBeGreaterThan(0);
   });
 
-  it("should ensure all generated rooms are accessible from the spawn point", () => {
+  it("should ensure all generated rooms are accessible from the spawn point", async () => {
     // Retry a few times if random generation produces degenerate cases (unlikely but possible in BSP)
     // or just run once. BSP guarantees connectivity if implemented correctly.
     const generator = new BSPMapGenerator(WIDTH, HEIGHT);
-    const result = generator.generate(1);
+    const result = await generator.generate(1);
     const map = result.map;
     const spawn = result.playerSpawn;
 
