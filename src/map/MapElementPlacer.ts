@@ -159,7 +159,6 @@ export function placeSubsequentFloorElements(
     const entranceLocation = { ...playerSpawn };
 
     let previousFloorStairsLocation: { x: number; y: number } | undefined;
-    let nextFloorStairsLocation: { x: number; y: number } | undefined;
 
     const stairsUpX = playerX;
     const stairsUpY = playerY + 1;
@@ -225,7 +224,7 @@ export function placeSubsequentFloorElements(
     }
     // Only set if a unique spot was found
     safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
-    nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
+    const nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
 
     return {
       playerSpawn,
@@ -256,7 +255,6 @@ export function placeSubsequentFloorElements(
   const entranceLocation = { ...playerSpawn };
 
   let previousFloorStairsLocation: { x: number; y: number } | undefined;
-  let nextFloorStairsLocation: { x: number; y: number } | undefined;
 
   const stairsUpX = playerX;
   const stairsUpY = playerY + 1;
@@ -330,7 +328,7 @@ export function placeSubsequentFloorElements(
   }
 
   safeSet(stairsDownX, stairsDownY, STAIRS_KEYS.DOWN);
-  nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
+  const nextFloorStairsLocation = { x: stairsDownX, y: stairsDownY };
 
   return {
     playerSpawn,

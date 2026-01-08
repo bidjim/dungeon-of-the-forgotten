@@ -2,6 +2,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GameScene } from "./GameScene";
 import { Player } from "../Player";
 
+const mockFloorData = {
+  id: 1,
+  tileData: [
+    [1, 1],
+    [1, 1],
+  ],
+  rooms: [{ x: 0, y: 0, w: 2, h: 2 }],
+  stairs: { up: null, down: null },
+  gate: { x: 0, y: 0 },
+  explorationMap: [
+    [0, 0],
+    [0, 0],
+  ],
+};
+
+vi.mock("../map/MapFeatureGenerator");
+
 // Mock Player
 vi.mock("../Player", () => {
   return {
@@ -15,22 +32,42 @@ vi.mock("../Player", () => {
 
 // Mock Phaser
 vi.mock("phaser", () => {
+  const mockTilemap = {
+    addTilesetImage: vi.fn().mockReturnValue({}),
+    createLayer: vi.fn().mockReturnValue({
+      replaceByIndex: vi.fn(),
+      setCollision: vi.fn(),
+    }),
+    // Add getLayer to satisfy MapManager.init
+    getLayer: vi.fn().mockReturnValue({
+      tilemapLayer: {
+        getTileAt: vi.fn(),
+      },
+    }),
+    worldToTileX: vi.fn().mockReturnValue(0),
+    worldToTileY: vi.fn().mockReturnValue(0),
+    getTileAt: vi.fn(),
+    widthInPixels: 100,
+    heightInPixels: 100,
+  };
+
   return {
     default: {
       Scene: class {
         input: any;
-        add: any;
         plugins: any;
-        cameras: any;
+        scene: any; // Added for InteractionManager transitions
 
-        constructor(key: string) {
+        constructor() {
           this.input = {
             keyboard: {
-              createCursorKeys: vi.fn().mockReturnValue({}),
+              createCursorKeys: vi.fn().mockReturnValue({
+                up: {},
+                down: {},
+                left: {},
+                right: {},
+              }),
             },
-          };
-          this.add = {
-            circle: vi.fn(),
           };
           this.plugins = {
             get: vi.fn().mockReturnValue({
@@ -39,12 +76,36 @@ vi.mock("phaser", () => {
               }),
             }),
           };
-          this.cameras = {
-            main: {
-              startFollow: vi.fn(),
-            },
+          // Mock the scene manager for transitions
+          this.scene = {
+            start: vi.fn(),
           };
         }
+
+        add = {
+          existing: vi.fn(),
+          circle: vi.fn(),
+          zone: vi.fn().mockReturnValue({
+            body: {},
+          }),
+        };
+        make = { tilemap: vi.fn().mockReturnValue(mockTilemap) };
+        physics = {
+          add: {
+            collider: vi.fn(),
+            overlap: vi.fn(),
+            existing: vi.fn(),
+            sprite: vi.fn().mockReturnValue({
+              setBodySize: vi.fn(),
+              setImmovable: vi.fn(),
+              setVisible: vi.fn(),
+              setData: vi.fn(),
+              body: {},
+            }),
+          },
+          world: { bounds: {} },
+        };
+        cameras = { main: { startFollow: vi.fn(), setBounds: vi.fn() } };
       },
     },
   };
@@ -57,13 +118,13 @@ describe("GameScene", () => {
     gameScene = new GameScene();
   });
 
-  it("should create Player instance", () => {
-    gameScene.create();
+  it("should create Player instance with floor data", () => {
+    gameScene.create({ floorData: mockFloorData as any });
     expect(Player).toHaveBeenCalled();
   });
 
-  it("should add Joystick plugin", () => {
-    gameScene.create();
-    expect(gameScene.plugins.get).toHaveBeenCalledWith("rexVirtualJoystick");
+  it("should initialize MapManager through create", () => {
+    gameScene.create({ floorData: mockFloorData as any });
+    expect(gameScene.make.tilemap).toHaveBeenCalled();
   });
 });

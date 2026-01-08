@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { GameScene } from "./scenes/GameScene";
 import VirtualJoystickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-plugin.js";
+import { LoadingScene } from "./scenes/LoadingScene";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -10,11 +11,11 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: "arcade",
     arcade: {
-      debug: import.meta.env.VITE_APP_DEBUG_MODE === 'true',
+      debug: import.meta.env.VITE_APP_DEBUG_MODE === "true",
       gravity: { x: 0, y: 0 },
     },
   },
-  scene: [BootScene, GameScene],
+  scene: [BootScene, LoadingScene, GameScene],
   pixelArt: true,
   plugins: {
     global: [
@@ -27,4 +28,4 @@ const config: Phaser.Types.Core.GameConfig = {
   },
 };
 
-const game = new Phaser.Game(config);
+new Phaser.Game(config);

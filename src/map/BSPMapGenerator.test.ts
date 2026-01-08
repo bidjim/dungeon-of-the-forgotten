@@ -7,17 +7,17 @@ describe("BSPMapGenerator", () => {
   const WIDTH = 50;
   const HEIGHT = 40;
 
-  it("should generate a map with the correct dimensions", () => {
+  it("should generate a map with the correct dimensions", async () => {
     const generator = new BSPMapGenerator(WIDTH, HEIGHT);
-    const result = generator.generate(1);
+    const result = await generator.generate(1);
 
     expect(result.map.length).toBe(HEIGHT);
     expect(result.map.every((row) => row.length === WIDTH)).toBe(true);
   });
 
-  it("should return the correct number of leaves via getAllRooms", () => {
+  it("should return the correct number of leaves via getAllRooms", async () => {
     const generator = new BSPMapGenerator(WIDTH, HEIGHT);
-    generator.generate(1);
+    await generator.generate(1);
 
     // Access private properties/methods via casting to any
     const root = (generator as any).root as Leaf;
@@ -41,11 +41,11 @@ describe("BSPMapGenerator", () => {
     expect(collectedRooms.length).toBeGreaterThan(0);
   });
 
-  it("should ensure all generated rooms are accessible from the spawn point", () => {
+  it("should ensure all generated rooms are accessible from the spawn point", async () => {
     // Retry a few times if random generation produces degenerate cases (unlikely but possible in BSP)
     // or just run once. BSP guarantees connectivity if implemented correctly.
     const generator = new BSPMapGenerator(WIDTH, HEIGHT);
-    const result = generator.generate(1);
+    const result = await generator.generate(1);
     const map = result.map;
     const spawn = result.playerSpawn;
 
@@ -91,6 +91,63 @@ describe("BSPMapGenerator", () => {
 
       let isRoomReachable = false;
       // Scan the room area
+      for (let y = leaf.room.y; y < leaf.room.y + leaf.room.h; y++) {
+        for (let x = leaf.room.x; x < leaf.room.x + leaf.room.w; x++) {
+          if (visited.has(`${x},${y}`)) {
+            isRoomReachable = true;
+            break;
+          }
+        }
+        if (isRoomReachable) break;
+      }
+
+      expect(isRoomReachable).toBe(true);
+    }
+  });
+
+  it("should ensure all generated rooms are accessible from the spawn point", async () => {
+    // Added async
+    const generator = new BSPMapGenerator(WIDTH, HEIGHT);
+    const result = await generator.generate(1); // Added await
+    const map = result.map;
+    const spawn = result.playerSpawn;
+
+    const collectedRooms: Leaf[] = [];
+    (generator as any).getAllRooms((generator as any).root, collectedRooms);
+
+    const visited = new Set<string>();
+    const queue: { x: number; y: number }[] = [spawn];
+    visited.add(`${spawn.x},${spawn.y}`);
+
+    const directions = [
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+    ];
+
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+
+      for (const dir of directions) {
+        const nx = curr.x + dir.x;
+        const ny = curr.y + dir.y;
+
+        if (nx >= 0 && nx < WIDTH && ny >= 0 && ny < HEIGHT) {
+          // A tile is walkable if it is NOT EMPTY_TILE_INDEX
+          // This includes floors, corridors, stairs, and doors.
+          if (map[ny][nx] !== EMPTY_TILE_INDEX && !visited.has(`${nx},${ny}`)) {
+            visited.add(`${nx},${ny}`);
+            queue.push({ x: nx, y: ny });
+          }
+        }
+      }
+    }
+
+    for (const leaf of collectedRooms) {
+      if (!leaf.room) continue;
+
+      let isRoomReachable = false;
       for (let y = leaf.room.y; y < leaf.room.y + leaf.room.h; y++) {
         for (let x = leaf.room.x; x < leaf.room.x + leaf.room.w; x++) {
           if (visited.has(`${x},${y}`)) {

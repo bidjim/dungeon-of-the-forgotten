@@ -76,6 +76,9 @@ describe("BootScene", () => {
     });
 
     // Verify scene transition
-    expect(bootScene.scene.start).toHaveBeenCalledWith("GameScene");
+    expect(bootScene.scene.start).toHaveBeenCalledWith("LoadingScene", {
+      cameFrom: "gate",
+      floor: 1,
+    });
   });
 });
