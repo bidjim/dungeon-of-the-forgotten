@@ -147,39 +147,39 @@ export class Leaf {
     p2: { x: number; y: number },
     horizontalFirst: boolean
   ): void {
+    const thickness = 2;
     if (horizontalFirst) {
       // Horizontal segment
       this.halls.push({
         x: Math.min(p1.x, p2.x),
         y: p1.y,
-        w: Math.abs(p1.x - p2.x),
-        h: 2,
+        w: Math.abs(p1.x - p2.x) + thickness, // Added thickness to ensure overlap
+        h: thickness,
       });
       // Vertical segment
       this.halls.push({
         x: p2.x,
         y: Math.min(p1.y, p2.y),
-        w: 2,
-        h: Math.abs(p1.y - p2.y),
+        w: thickness,
+        h: Math.abs(p1.y - p2.y) + thickness, // Added thickness to ensure overlap
       });
     } else {
       // Vertical segment
       this.halls.push({
         x: p1.x,
         y: Math.min(p1.y, p2.y),
-        w: 2,
-        h: Math.abs(p1.y - p2.y),
+        w: thickness,
+        h: Math.abs(p1.y - p2.y) + thickness, // Added thickness to ensure overlap
       });
       // Horizontal segment
       this.halls.push({
         x: Math.min(p1.x, p2.x),
         y: p2.y,
-        w: Math.abs(p1.x - p2.x),
-        h: 2,
+        w: Math.abs(p1.x - p2.x) + thickness, // Added thickness to ensure overlap
+        h: thickness,
       });
     }
   }
-
 
   /**
    * Connects two rooms with an L-shaped corridor.
@@ -224,17 +224,33 @@ export class Leaf {
       if (verticalDistance < 0) {
         // Randomly decide which segment to draw first: horizontal or vertical.
         if (Math.random() < 0.5) {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            true
+          );
         } else {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            false
+          );
         }
       }
       // Subcase 1.2: The corridorEndPoint is below the corridorStartPoint (verticalDistance is positive).
       else if (verticalDistance > 0) {
         if (Math.random() < 0.5) {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            true
+          );
         } else {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            false
+          );
         }
       }
       // Subcase 1.3: The corridorEndPoint and corridorStartPoint are on the same Y-axis (verticalDistance is zero).
@@ -254,17 +270,33 @@ export class Leaf {
       // Subcase 2.1: The corridorEndPoint is above the corridorStartPoint (verticalDistance is negative).
       if (verticalDistance < 0) {
         if (Math.random() < 0.5) {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            true
+          );
         } else {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            false
+          );
         }
       }
       // Subcase 2.2: The corridorEndPoint is below the corridorStartPoint (verticalDistance is positive).
       else if (verticalDistance > 0) {
         if (Math.random() < 0.5) {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, true);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            true
+          );
         } else {
-          this._addLShapedCorridorSegments(corridorStartPoint, corridorEndPoint, false);
+          this._addLShapedCorridorSegments(
+            corridorStartPoint,
+            corridorEndPoint,
+            false
+          );
         }
       }
       // Subcase 2.3: The corridorEndPoint and corridorStartPoint are on the same Y-axis (verticalDistance is zero).
