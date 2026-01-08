@@ -102,41 +102,56 @@ export class InteractionManager {
       | Phaser.Physics.Arcade.StaticBody
       | Phaser.Tilemaps.Tile
   ): void {
-    if (!(gameObject1 instanceof Player)) {
-      console.warn("Overlap detected with non-Player object:", gameObject1);
-      return;
-    }
-    const object = gameObject2 as Phaser.GameObjects.Sprite;
-    const type = object.getData("type");
+    // 1. Ensure the first object is the Player
+    if (!(gameObject1 instanceof Player)) return;
 
-    if (type === "gate") {
-      // TODO: Make this a proper town transition. For now, it's a placeholder.
-      // this.scene.restart({ floor: 1 });
-    } else if (type === "stair_up") {
-      DungeonManager.getInstance().saveFloorState(
-        this.currentFloorData.id, // Use the ID of the current floor being left
-        [], // Empty array for entities for now
-        [], // Empty array for items for now
-        this.explorationMap // Pass the current exploration map
-      );
-      let newFloor = this.currentFloor - 1;
-      if (newFloor < 1) newFloor = 1; // Prevent going below floor 1
-      this.scene.scene.start("LoadingScene", {
-        floor: newFloor,
-        cameFrom: "up",
-      });
-    } else if (type === "stair_down") {
-      DungeonManager.getInstance().saveFloorState(
-        this.currentFloorData.id, // Use the ID of the current floor being left
-        [], // Empty array for entities for now
-        [], // Empty array for items for now
-        this.explorationMap // Pass the current exploration map
-      );
-      const newFloor = this.currentFloor + 1;
-      this.scene.scene.start("LoadingScene", {
-        floor: newFloor,
-        cameFrom: "down",
-      });
+    // 2. Safely check if the second object is a GameObject capable of holding data
+    if (!(gameObject2 instanceof Phaser.GameObjects.GameObject)) return;
+
+    const type = gameObject2.getData("type");
+    if (!type) return;
+
+    const floorManager = DungeonManager.getInstance();
+
+    switch (type) {
+      case "stair_up": {
+        floorManager.saveFloorState(
+          this.currentFloorData.id,
+          [],
+          [],
+          this.explorationMap
+        );
+        const newFloor = Math.max(1, this.currentFloor - 1);
+        this.scene.scene.start("LoadingScene", {
+          floor: newFloor,
+          cameFrom: "up",
+        });
+        break;
+      }
+
+      case "stair_down": {
+        floorManager.saveFloorState(
+          this.currentFloorData.id,
+          [],
+          [],
+          this.explorationMap
+        );
+        const newFloor = this.currentFloor + 1;
+        this.scene.scene.start("LoadingScene", {
+          floor: newFloor,
+          cameFrom: "down",
+        });
+        break;
+      }
+
+      case "gate": {
+        // TODO: Implement proper town transition logic
+        console.log("Gate interaction triggered");
+        break;
+      }
+
+      default:
+        break;
     }
   }
 }
