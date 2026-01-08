@@ -10,6 +10,7 @@ export class MapManager {
   private map!: Phaser.Tilemaps.Tilemap;
   private floorLayer!: Phaser.Tilemaps.TilemapLayer;
   private fadedTiles: Phaser.Tilemaps.Tile[] = [];
+  private obscuringLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -39,6 +40,11 @@ export class MapManager {
 
     generateFeatureLayers(this.map, tileset, this.floorLayer);
 
+    const layerNames = ["Wall Lower", "Wall Top Lower"];
+    this.obscuringLayers = layerNames
+      .map((name) => this.map.getLayer(name)?.tilemapLayer)
+      .filter((l): l is Phaser.Tilemaps.TilemapLayer => l !== null);
+
     return this.map;
   }
 
@@ -53,22 +59,14 @@ export class MapManager {
     const playerTileX = this.map.worldToTileX(player.x)!;
     const playerTileY = this.map.worldToTileY(player.y)!;
 
-    const obscuringLayers = ["Wall Lower", "Wall Top Lower"];
-
-    obscuringLayers.forEach((layerName) => {
-      [0, -1].forEach((yOffset) => {
-        const tile = this.map.getTileAt(
-          playerTileX,
-          playerTileY + yOffset,
-          false,
-          layerName
-        );
-
+    for (const layer of this.obscuringLayers) {
+      for (let yOffset = 0; yOffset >= -1; yOffset--) {
+        const tile = layer.getTileAt(playerTileX, playerTileY + yOffset);
         if (tile) {
           tile.alpha = 0.6;
           this.fadedTiles.push(tile);
         }
-      });
-    });
+      }
+    }
   }
 }
