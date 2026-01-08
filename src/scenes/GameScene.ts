@@ -157,57 +157,63 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private isWalkable(x: number, y: number): boolean {
+    const data = this.currentFloorData;
+    // Check vertical bounds
+    if (y < 0 || y >= data.tileData.length) {
+      return false;
+    }
+    // Check horizontal bounds
+    if (x < 0 || x >= data.tileData[y].length) {
+      return false;
+    }
+    // Return true if tile is NOT a wall (0 is EMPTY_TILE_INDEX)
+    return data.tileData[y][x] !== 0;
+  }
+
+  private getRoomCenter(roomIndex: number): Vector2 {
+    const room = this.currentFloorData.rooms[roomIndex];
+    if (!room) {
+      return { x: 10, y: 10 }; // Absolute fallback if no rooms exist
+    }
+    return {
+      x: Math.floor(room.x + room.w / 2),
+      y: Math.floor(room.y + room.h / 2),
+    };
+  }
+
   private determinePlayerSpawnPoint(): Vector2 {
-    // Rule 1: For the first floor, player spawns two tiles south from the entrance gate.
-    // This applies when starting the game or returning to floor 1 without specific 'cameFrom' context.
-    if (
-      this.currentFloor === 1 &&
-      this.currentFloorData.gate !== null &&
-      this.cameFrom === "gate"
-    ) {
-      return {
-        x: this.currentFloorData.gate.x,
-        y: this.currentFloorData.gate.y + 2,
-      };
+    const data = this.currentFloorData;
+    let rawPoint: Vector2 | null = null;
+
+    // 1. Calculate the intended point based on transition type
+    if (this.currentFloor === 1 && data.gate && this.cameFrom === "gate") {
+      rawPoint = { x: data.gate.x, y: data.gate.y + 2 };
+    } else if (this.cameFrom === "down" && data.stairs.up) {
+      rawPoint = { x: data.stairs.up.x + 1, y: data.stairs.up.y };
+    } else if (this.cameFrom === "up" && data.stairs.down) {
+      rawPoint = { x: data.stairs.down.x - 1, y: data.stairs.down.y };
     }
 
-    // Rule 2: When going downstairs, player will spawn one tile east stair up at the next floor.
-    // This means the player arrived on THIS floor via 'stairs.up'.
-    if (this.cameFrom === "down" && this.currentFloorData.stairs.up !== null) {
-      return {
-        x: this.currentFloorData.stairs.up.x + 1,
-        y: this.currentFloorData.stairs.up.y,
-      };
+    // 2. If a specific transition point was found, verify it is walkable and in-bounds
+    if (rawPoint && this.isWalkable(rawPoint.x, rawPoint.y)) {
+      return rawPoint;
     }
 
-    // Rule 3: When going upstairs, player will spawn one tile west stair down at the previous floor.
-    // This means the player arrived on THIS floor via 'stairs.down'.
-    if (this.cameFrom === "up" && this.currentFloorData.stairs.down !== null) {
-      return {
-        x: this.currentFloorData.stairs.down.x - 1,
-        y: this.currentFloorData.stairs.down.y,
-      };
-    }
-
-    // Fallback: If no specific rule applies, use existing fallback or a sensible default.
-    // This might happen if 'cameFrom' is undefined on a non-first floor, which implies a bug elsewhere.
+    // 3. Fallback logic: If the intended point is a wall or no rule matched
     console.warn(
-      "Could not determine a specific spawn point, falling back to stairs.up or stairs.down + 1Y."
+      "Intended spawn point invalid or blocked. Falling back to room center."
     );
-    if (this.currentFloorData.stairs.up !== null) {
-      // Old logic: spawn one tile below stairs up
-      return {
-        x: this.currentFloorData.stairs.up.x,
-        y: this.currentFloorData.stairs.up.y + 1,
-      };
-    } else if (this.currentFloorData.stairs.down !== null) {
-      // Old logic: spawn one tile below stairs down (for entrance)
-      return {
-        x: this.currentFloorData.stairs.down.x,
-        y: this.currentFloorData.stairs.down.y + 1,
-      };
+
+    // Check if stairs.up exists as a primary fallback
+    if (
+      data.stairs.up &&
+      this.isWalkable(data.stairs.up.x, data.stairs.up.y + 1)
+    ) {
+      return { x: data.stairs.up.x, y: data.stairs.up.y + 1 };
     }
 
-    return { x: 10, y: 10 }; // Ultimate fallback for debug or very unexpected scenarios
+    // Final fallback: Center of the first room
+    return this.getRoomCenter(0);
   }
 }
