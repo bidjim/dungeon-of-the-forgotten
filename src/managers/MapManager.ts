@@ -97,10 +97,15 @@ export class MapManager {
     const playerTileY = this.map.worldToTileY(player.y)!;
 
     for (const layer of this.obscuringLayers) {
+      // Check the tile the player is on and the tile immediately above
       for (let yOffset = 0; yOffset >= -1; yOffset--) {
-        const tile = layer.getTileAt(playerTileX, playerTileY + yOffset);
-        // Priority Check: Only fade if the tile is actually visible
-        if (tile && this.explorationMap[tile.y][tile.x] === 2) {
+        const targetX = playerTileX;
+        const targetY = playerTileY + yOffset;
+
+        const tile = layer.getTileAt(targetX, targetY);
+
+        // Only fade if the base tile is currently visible (state 2)
+        if (tile && this.explorationMap[targetY][targetX] === 2) {
           tile.alpha = 0.6;
           this.fadedTiles.push(tile);
         }
