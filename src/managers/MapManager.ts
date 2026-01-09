@@ -99,9 +99,30 @@ export class MapManager {
     for (const layer of this.obscuringLayers) {
       for (let yOffset = 0; yOffset >= -1; yOffset--) {
         const tile = layer.getTileAt(playerTileX, playerTileY + yOffset);
-        if (tile) {
+        // Priority Check: Only fade if the tile is actually visible
+        if (tile && this.explorationMap[tile.y][tile.x] === 2) {
           tile.alpha = 0.6;
           this.fadedTiles.push(tile);
+        }
+      }
+    }
+  }
+
+  public updateFOV(playerX: number, playerY: number, radius: number = 8) {
+    const tx = this.map.worldToTileX(playerX)!;
+    const ty = this.map.worldToTileY(playerY)!;
+
+    this.computeFOV(tx, ty, radius);
+
+    for (let y = 0; y < this.map.height; y++) {
+      for (let x = 0; x < this.map.width; x++) {
+        const state = this.explorationMap[y][x];
+        if (state === 2) {
+          this.fovLayer.removeTileAt(x, y); // Visible
+        } else if (state === 1) {
+          this.fovLayer.putTileAt(1, x, y); // Explored
+        } else {
+          this.fovLayer.putTileAt(0, x, y); // Unseen
         }
       }
     }
@@ -128,5 +149,110 @@ export class MapManager {
     // Generate the texture
     graphics.generateTexture("fog-tiles", size * 2, size);
     graphics.destroy();
+  }
+
+  private computeFOV(centerX: number, centerY: number, radius: number) {
+    // Reset currently visible tiles in exploration map (convert 2 to 1)
+    for (let y = 0; y < this.map.height; y++) {
+      for (let x = 0; x < this.map.width; x++) {
+        if (this.explorationMap[y][x] === 2) {
+          this.explorationMap[y][x] = 1;
+        }
+      }
+    }
+
+    // Source is always visible
+    this.explorationMap[centerY][centerX] = 2;
+
+    // Scan 8 octants
+    for (let i = 0; i < 8; i++) {
+      this.scanOctant(centerX, centerY, radius, 1, 1.0, 0.0, i);
+    }
+  }
+
+  private scanOctant(
+    cx: number,
+    cy: number,
+    radius: number,
+    row: number,
+    start: number,
+    end: number,
+    octant: number
+  ) {
+    if (start < end) return;
+    let radiusSq = radius * radius;
+
+    for (let j = row; j <= radius; j++) {
+      let dx = -j - 1;
+      let dy = -j;
+      let blocked = false;
+      let nextStart = start;
+
+      for (let i = j; i >= 0; i--) {
+        dx++;
+        // Map relative coordinates to world grid based on octant
+        const [rx, ry] = this.transformOctant(dx, dy, octant);
+        const wx = cx + rx;
+        const wy = cy + ry;
+
+        if (wx < 0 || wx >= this.map.width || wy < 0 || wy >= this.map.height)
+          continue;
+
+        let l_slope = (dx - 0.5) / (dy + 0.5);
+        let r_slope = (dx + 0.5) / (dy - 0.5);
+
+        if (start < r_slope) continue;
+        if (end > l_slope) break;
+
+        if (dx * dx + dy * dy <= radiusSq) {
+          this.explorationMap[wy][wx] = 2;
+        }
+
+        const isOpaque = this.floorLayer.getTileAt(wx, wy)?.index === 0;
+
+        if (blocked) {
+          if (isOpaque) {
+            nextStart = r_slope;
+          } else {
+            blocked = false;
+            start = nextStart;
+          }
+        } else {
+          if (isOpaque && j < radius) {
+            blocked = true;
+            this.scanOctant(cx, cy, radius, j + 1, start, l_slope, octant);
+            nextStart = r_slope;
+          }
+        }
+      }
+      if (blocked) break;
+    }
+  }
+
+  private transformOctant(
+    x: number,
+    y: number,
+    octant: number
+  ): [number, number] {
+    switch (octant) {
+      case 0:
+        return [y, -x];
+      case 1:
+        return [x, -y];
+      case 2:
+        return [x, y];
+      case 3:
+        return [y, x];
+      case 4:
+        return [-y, x];
+      case 5:
+        return [-x, y];
+      case 6:
+        return [-x, -y];
+      case 7:
+        return [-y, -x];
+      default:
+        return [x, y];
+    }
   }
 }
