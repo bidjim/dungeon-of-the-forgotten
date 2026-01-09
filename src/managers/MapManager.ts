@@ -126,7 +126,6 @@ export class MapManager {
           const tile = this.floorLayer.getTileAt(x, y);
           if (tile && tile.index === 0) {
             this.fovLayer.removeTileAt(x, y - 1);
-            this.fovLayer.removeTileAt(x, y - 2);
           }
         } else if (state === 1) {
           this.fovLayer.putTileAt(1, x, y);
