@@ -62,7 +62,7 @@ export class GameScene extends Phaser.Scene {
       map,
       this.currentFloorData,
       this.currentFloorData.id,
-      this.currentFloorData.explorationMap
+      this.mapManager
     );
     interactionManager.setupInteractions();
 

@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { Player } from "../Player";
 import { DungeonManager } from "./DungeonManager";
 import { FloorData } from "../types/map";
+import { MapManager } from "./MapManager";
 
 const TILE_SIZE = 16; // In pixels
 
@@ -11,7 +12,7 @@ export class InteractionManager {
   private map: Phaser.Tilemaps.Tilemap;
   private currentFloorData: FloorData;
   private currentFloor: number;
-  private explorationMap: number[][];
+  private mapManager: MapManager;
 
   constructor(
     scene: Phaser.Scene,
@@ -19,14 +20,14 @@ export class InteractionManager {
     map: Phaser.Tilemaps.Tilemap,
     currentFloorData: FloorData,
     currentFloor: number,
-    explorationMap: number[][]
+    mapManager: MapManager
   ) {
     this.scene = scene;
     this.player = player;
     this.map = map;
     this.currentFloorData = currentFloorData;
     this.currentFloor = currentFloor;
-    this.explorationMap = explorationMap;
+    this.mapManager = mapManager;
   }
 
   public setupInteractions(): void {
@@ -119,7 +120,7 @@ export class InteractionManager {
           this.currentFloorData.id,
           [],
           [],
-          this.explorationMap
+          this.mapManager.getExplorationMap()
         );
         const newFloor = Math.max(1, this.currentFloor - 1);
         this.scene.scene.start("LoadingScene", {
@@ -134,7 +135,7 @@ export class InteractionManager {
           this.currentFloorData.id,
           [],
           [],
-          this.explorationMap
+          this.mapManager.getExplorationMap()
         );
         const newFloor = this.currentFloor + 1;
         this.scene.scene.start("LoadingScene", {

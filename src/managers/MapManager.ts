@@ -127,6 +127,12 @@ export class MapManager {
       }
     }
   }
+  public getExplorationMap(): number[][] {
+    // Return the map, ensuring current 'Visible' (2) are saved as 'Explored' (1)
+    return this.explorationMap.map((row) =>
+      row.map((cell) => (cell === 2 ? 1 : cell))
+    );
+  }
 
   private createFogTexture() {
     const size = TILE_SIZE;
