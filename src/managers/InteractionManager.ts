@@ -103,10 +103,7 @@ export class InteractionManager {
       | Phaser.Physics.Arcade.StaticBody
       | Phaser.Tilemaps.Tile
   ): void {
-    // 1. Ensure the first object is the Player
     if (!(gameObject1 instanceof Player)) return;
-
-    // 2. Safely check if the second object is a GameObject capable of holding data
     if (!(gameObject2 instanceof Phaser.GameObjects.GameObject)) return;
 
     const type = gameObject2.getData("type");
@@ -114,45 +111,27 @@ export class InteractionManager {
 
     const floorManager = DungeonManager.getInstance();
 
-    switch (type) {
-      case "stair_up": {
-        floorManager.saveFloorState(
-          this.currentFloorData.id,
-          [],
-          [],
-          this.mapManager.getExplorationMap()
-        );
-        const newFloor = Math.max(1, this.currentFloor - 1);
-        this.scene.scene.start("LoadingScene", {
-          floor: newFloor,
-          cameFrom: "up",
-        });
-        break;
-      }
+    // Get live data from manager instead of stale constructor copy
+    const currentExploration = this.mapManager.getExplorationMap();
 
-      case "stair_down": {
-        floorManager.saveFloorState(
-          this.currentFloorData.id,
-          [],
-          [],
-          this.mapManager.getExplorationMap()
-        );
-        const newFloor = this.currentFloor + 1;
-        this.scene.scene.start("LoadingScene", {
-          floor: newFloor,
-          cameFrom: "down",
-        });
-        break;
-      }
+    if (type === "stair_up" || type === "stair_down") {
+      floorManager.saveFloorState(
+        this.currentFloorData.id,
+        [], // TODO: Integrate with EntityManager.getStates()
+        [], // TODO: Integrate with ItemManager.getStates()
+        currentExploration
+      );
 
-      case "gate": {
-        // TODO: Implement proper town transition logic
-        console.log("Gate interaction triggered");
-        break;
-      }
+      const newFloor =
+        type === "stair_up"
+          ? Math.max(1, this.currentFloor - 1)
+          : this.currentFloor + 1;
+      const direction = type === "stair_up" ? "up" : "down";
 
-      default:
-        break;
+      this.scene.scene.start("LoadingScene", {
+        floor: newFloor,
+        cameFrom: direction,
+      });
     }
   }
 }
