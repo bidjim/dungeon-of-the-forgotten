@@ -113,11 +113,11 @@ export class MapManager {
     }
   }
 
-  public updateFOV(playerX: number, playerY: number, radius: number = 8) {
+  public updateFOV(playerX: number, playerY: number) {
     const tx = this.map.worldToTileX(playerX)!;
     const ty = this.map.worldToTileY(playerY)!;
 
-    this.computeFOV(tx, ty, radius);
+    this.computeFOV(tx, ty);
 
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
@@ -172,7 +172,7 @@ export class MapManager {
     graphics.destroy();
   }
 
-  private computeFOV(centerX: number, centerY: number, radius: number) {
+  private computeFOV(centerX: number, centerY: number) {
     // Reset currently visible tiles in exploration map (convert 2 to 1)
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
@@ -187,7 +187,7 @@ export class MapManager {
 
     // Scan 8 octants
     for (let i = 0; i < 8; i++) {
-      this.scanOctant(centerX, centerY, radius, 1, 1.0, 0.0, i);
+      this.scanOctant(centerX, centerY, this.visionRadius, 1, 1.0, 0.0, i);
     }
   }
 
