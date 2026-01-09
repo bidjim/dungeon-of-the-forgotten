@@ -13,6 +13,7 @@ export class InteractionManager {
   private currentFloorData: FloorData;
   private currentFloor: number;
   private mapManager: MapManager;
+  private isTransitioning: boolean = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -87,7 +88,7 @@ export class InteractionManager {
     object.setBodySize(width, height);
     object.setImmovable(true);
     object.setVisible(false);
-    object.setData("type", type); // Store type for overlap handler
+    object.setData("type", type);
     return object;
   }
 
@@ -103,22 +104,26 @@ export class InteractionManager {
       | Phaser.Physics.Arcade.StaticBody
       | Phaser.Tilemaps.Tile
   ): void {
+    if (this.isTransitioning) return; // Guard clause
+
     if (!(gameObject1 instanceof Player)) return;
     if (!(gameObject2 instanceof Phaser.GameObjects.GameObject)) return;
 
     const type = gameObject2.getData("type");
     if (!type) return;
 
-    const floorManager = DungeonManager.getInstance();
-
-    // Get live data from manager instead of stale constructor copy
-    const currentExploration = this.mapManager.getExplorationMap();
-
     if (type === "stair_up" || type === "stair_down") {
+      this.isTransitioning = true; // Engage lock
+
+      const floorManager = DungeonManager.getInstance();
+
+      // Get live data from manager
+      const currentExploration = this.mapManager.getExplorationMap();
+
       floorManager.saveFloorState(
         this.currentFloorData.id,
-        [], // TODO: Integrate with EntityManager.getStates()
-        [], // TODO: Integrate with ItemManager.getStates()
+        [], // TODO: Integrate with EntityManager
+        [], // TODO: Integrate with ItemManager
         currentExploration
       );
 

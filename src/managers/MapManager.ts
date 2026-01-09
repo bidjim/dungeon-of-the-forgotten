@@ -49,7 +49,7 @@ export class MapManager {
       .filter((l): l is Phaser.Tilemaps.TilemapLayer => l !== null);
 
     this.explorationMap = floorData.explorationMap;
-    this.createFogTexture();
+    this.createFogTexture(); // Safe creation
 
     // Create an empty map for the fog tiles
     const fogMap = this.scene.make.tilemap({
@@ -69,15 +69,25 @@ export class MapManager {
       0
     );
     this.fovLayer = fogMap.createLayer(0, fogTileset!)!;
-    this.fovLayer.setDepth(100); // Ensure it is above players/enemies
+    this.fovLayer.setDepth(100);
 
     // Set initial visual state based on saved explorationMap
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
-        if (this.explorationMap[y][x] === 1) {
-          this.fovLayer.putTileAt(1, x, y); // Explored
+        const state = this.explorationMap[y][x];
+
+        // FIXED: Treat 2 (Visible in previous session) as 1 (Explored)
+        // This prevents the "Pitch Black" bug on reload
+        if (state >= 1) {
+          this.fovLayer.putTileAt(1, x, y); // Explored (Dim)
+
+          // Initial Vertical Extension for Walls
+          const tile = this.floorLayer.getTileAt(x, y);
+          if (tile && tile.index === 0 && y > 0) {
+            this.fovLayer.putTileAt(1, x, y - 1);
+          }
         } else {
-          this.fovLayer.putTileAt(0, x, y); // Unseen
+          this.fovLayer.putTileAt(0, x, y); // Unseen (Black)
         }
       }
     }
@@ -119,24 +129,45 @@ export class MapManager {
 
     this.computeFOV(tx, ty);
 
+    // Pass 1: Set base fog state for every tile
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
         const state = this.explorationMap[y][x];
 
         if (state === 2) {
+          // Visible: No fog
           this.fovLayer.removeTileAt(x, y);
-
-          // Vertical Extension: If this is a wall, reveal 2 tiles above it
-          // index 0 is wall based on Phase 2 consultation
-          const tile = this.floorLayer.getTileAt(x, y);
-          if (tile && tile.index === 0) {
-            this.fovLayer.removeTileAt(x, y - 1);
-          }
         } else if (state === 1) {
+          // Explored: Dim fog
           this.fovLayer.putTileAt(1, x, y);
-          this.fovLayer.putTileAt(1, x, y - 1);
         } else {
+          // Unseen: Black fog
           this.fovLayer.putTileAt(0, x, y);
+        }
+      }
+    }
+
+    // Pass 2: Apply Vertical Extensions (Wall Tops)
+    // We only touch the tile ABOVE a wall here.
+    for (let y = 0; y < this.map.height; y++) {
+      for (let x = 0; x < this.map.width; x++) {
+        const tile = this.floorLayer.getTileAt(x, y);
+
+        // If this is a wall (Index 0) and we have space above
+        if (tile && tile.index === 0 && y > 0) {
+          const state = this.explorationMap[y][x];
+          const tileAboveState = this.explorationMap[y - 1][x];
+
+          if (state === 2) {
+            // Wall is visible: Force reveal the tile above
+            this.fovLayer.removeTileAt(x, y - 1);
+          } else if (state === 1) {
+            // Wall is explored: Dim the tile above, BUT ONLY if it isn't currently Visible (2)
+            // This prevents the flickering/overwrite bug
+            if (tileAboveState !== 2) {
+              this.fovLayer.putTileAt(1, x, y - 1);
+            }
+          }
         }
       }
     }
@@ -151,6 +182,12 @@ export class MapManager {
 
   private createFogTexture() {
     const size = TILE_SIZE;
+
+    // Safety: Destroy existing texture to prevent corruption
+    if (this.scene.textures.exists("fog-tiles")) {
+      this.scene.textures.remove("fog-tiles");
+    }
+
     const graphics = this.scene.make.graphics(
       {
         x: 0,
@@ -173,7 +210,8 @@ export class MapManager {
   }
 
   private computeFOV(centerX: number, centerY: number) {
-    // Reset currently visible tiles in exploration map (convert 2 to 1)
+    // Optimization: Only iterate and convert currently visible tiles (2) back to explored (1)
+    // instead of checking every tile in the map.
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
         if (this.explorationMap[y][x] === 2) {
@@ -182,10 +220,10 @@ export class MapManager {
       }
     }
 
-    // Source is always visible
+    // Source tile is always visible
     this.explorationMap[centerY][centerX] = 2;
 
-    // Scan 8 octants
+    // Scan 8 octants to find new visible tiles
     for (let i = 0; i < 8; i++) {
       this.scanOctant(centerX, centerY, this.visionRadius, 1, 1.0, 0.0, i);
     }
