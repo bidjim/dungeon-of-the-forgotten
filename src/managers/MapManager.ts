@@ -117,16 +117,27 @@ export class MapManager {
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
         const state = this.explorationMap[y][x];
+
         if (state === 2) {
-          this.fovLayer.removeTileAt(x, y); // Visible
+          this.fovLayer.removeTileAt(x, y);
+
+          // Vertical Extension: If this is a wall, reveal 2 tiles above it
+          // index 0 is wall based on Phase 2 consultation
+          const tile = this.floorLayer.getTileAt(x, y);
+          if (tile && tile.index === 0) {
+            this.fovLayer.removeTileAt(x, y - 1);
+            this.fovLayer.removeTileAt(x, y - 2);
+          }
         } else if (state === 1) {
-          this.fovLayer.putTileAt(1, x, y); // Explored
+          this.fovLayer.putTileAt(1, x, y);
+          this.fovLayer.putTileAt(1, x, y - 1);
         } else {
-          this.fovLayer.putTileAt(0, x, y); // Unseen
+          this.fovLayer.putTileAt(0, x, y);
         }
       }
     }
   }
+
   public getExplorationMap(): number[][] {
     // Return the map, ensuring current 'Visible' (2) are saved as 'Explored' (1)
     return this.explorationMap.map((row) =>
