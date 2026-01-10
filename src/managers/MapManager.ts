@@ -13,6 +13,7 @@ export class MapManager {
   private obscuringLayers: Phaser.Tilemaps.TilemapLayer[] = [];
   private fovLayer!: Phaser.Tilemaps.TilemapLayer;
   private explorationMap: number[][] = [];
+  private visibleTiles: { x: number; y: number }[] = [];
   private visionRadius: number = 8;
 
   constructor(scene: Phaser.Scene) {
@@ -219,18 +220,17 @@ export class MapManager {
   }
 
   private computeFOV(centerX: number, centerY: number) {
-    // Optimization: Only iterate and convert currently visible tiles (2) back to explored (1)
-    // instead of checking every tile in the map.
-    for (let y = 0; y < this.map.height; y++) {
-      for (let x = 0; x < this.map.width; x++) {
-        if (this.explorationMap[y][x] === 2) {
-          this.explorationMap[y][x] = 1;
-        }
+    // Reset only tiles that were visible in the previous frame
+    for (const coord of this.visibleTiles) {
+      if (this.explorationMap[coord.y][coord.x] === 2) {
+        this.explorationMap[coord.y][coord.x] = 1;
       }
     }
+    this.visibleTiles = [];
 
     // Source tile is always visible
     this.explorationMap[centerY][centerX] = 2;
+    this.visibleTiles.push({ x: centerX, y: centerY });
 
     // Scan 8 octants to find new visible tiles
     for (let i = 0; i < 8; i++) {
@@ -273,7 +273,10 @@ export class MapManager {
         if (end > l_slope) break;
 
         if (dx * dx + dy * dy <= radiusSq) {
-          this.explorationMap[wy][wx] = 2;
+          if (this.explorationMap[wy][wx] !== 2) {
+            this.explorationMap[wy][wx] = 2;
+            this.visibleTiles.push({ x: wx, y: wy });
+          }
         }
 
         const isOpaque = this.floorLayer.getTileAt(wx, wy)?.index === 0;
