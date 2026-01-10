@@ -70,6 +70,10 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.physics.world.bounds.width = map.widthInPixels;
     this.physics.world.bounds.height = map.heightInPixels;
+
+    this.mapManager.updateFOV(this.player.x, this.player.y);
+    this.lastPlayerTileX = Math.floor(this.player.x / TILE_SIZE);
+    this.lastPlayerTileY = Math.floor(this.player.y / TILE_SIZE);
   }
 
   update() {
