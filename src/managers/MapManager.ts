@@ -192,11 +192,6 @@ export class MapManager {
       return; // Already exists, skip generation
     }
 
-    // Safety: Destroy existing texture to prevent corruption
-    if (this.scene.textures.exists("fog-tiles")) {
-      this.scene.textures.remove("fog-tiles");
-    }
-
     const graphics = this.scene.make.graphics(
       {
         x: 0,
