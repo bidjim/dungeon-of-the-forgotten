@@ -130,10 +130,15 @@ export class MapManager {
     this.computeFOV(tx, ty);
 
     // Pass 1: Set base fog state for every tile
-    for (let y = 0; y < this.map.height; y++) {
-      for (let x = 0; x < this.map.width; x++) {
-        const state = this.explorationMap[y][x];
+    const margin = 1;
+    const startX = Math.max(0, tx - this.visionRadius - margin);
+    const endX = Math.min(this.map.width - 1, tx + this.visionRadius + margin);
+    const startY = Math.max(0, ty - this.visionRadius - margin);
+    const endY = Math.min(this.map.height - 1, ty + this.visionRadius + margin);
 
+    for (let y = startY; y <= endY; y++) {
+      for (let x = startX; x <= endX; x++) {
+        const state = this.explorationMap[y][x];
         if (state === 2) {
           // Visible: No fog
           this.fovLayer.removeTileAt(x, y);
@@ -182,6 +187,9 @@ export class MapManager {
 
   private createFogTexture() {
     const size = TILE_SIZE;
+    if (this.scene.textures.exists("fog-tiles")) {
+      return; // Already exists, skip generation
+    }
 
     // Safety: Destroy existing texture to prevent corruption
     if (this.scene.textures.exists("fog-tiles")) {
