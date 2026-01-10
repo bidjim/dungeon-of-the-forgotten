@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GameScene } from "./GameScene";
 import { Player } from "../Player";
+import { MapManager } from "../managers/MapManager";
+import { InteractionManager } from "../managers/InteractionManager";
 
 const mockFloorData = {
   id: 1,
@@ -17,46 +19,58 @@ const mockFloorData = {
   ],
 };
 
-vi.mock("../map/MapFeatureGenerator");
-
-// Mock Player
-vi.mock("../Player", () => {
+// 1. Mock MapManager
+vi.mock("../managers/MapManager", () => {
   return {
-    Player: vi.fn().mockImplementation(function () {
+    MapManager: vi.fn().mockImplementation(function () {
       return {
-        update: vi.fn(),
+        init: vi.fn().mockReturnValue({
+          widthInPixels: 100,
+          heightInPixels: 100,
+        }),
+        getFloorLayer: vi.fn().mockReturnValue({}),
+        updateFOV: vi.fn(),
+        updateTransparency: vi.fn(),
       };
     }),
   };
 });
 
-// Mock Phaser
-vi.mock("phaser", () => {
-  const mockTilemap = {
-    addTilesetImage: vi.fn().mockReturnValue({}),
-    createLayer: vi.fn().mockReturnValue({
-      replaceByIndex: vi.fn(),
-      setCollision: vi.fn(),
+// 2. Mock InteractionManager
+vi.mock("../managers/InteractionManager", () => {
+  return {
+    InteractionManager: vi.fn().mockImplementation(function () {
+      return {
+        setupInteractions: vi.fn(),
+      };
     }),
-    // Add getLayer to satisfy MapManager.init
-    getLayer: vi.fn().mockReturnValue({
-      tilemapLayer: {
-        getTileAt: vi.fn(),
-      },
-    }),
-    worldToTileX: vi.fn().mockReturnValue(0),
-    worldToTileY: vi.fn().mockReturnValue(0),
-    getTileAt: vi.fn(),
-    widthInPixels: 100,
-    heightInPixels: 100,
   };
+});
 
+// 3. Mock Player
+vi.mock("../Player", () => {
+  return {
+    Player: vi.fn().mockImplementation(function () {
+      return {
+        update: vi.fn(),
+        x: 0,
+        y: 0,
+      };
+    }),
+  };
+});
+
+// 4. Mock MapFeatureGenerator
+vi.mock("../map/MapFeatureGenerator");
+
+// 5. Mock Phaser
+vi.mock("phaser", () => {
   return {
     default: {
       Scene: class {
         input: any;
         plugins: any;
-        scene: any; // Added for InteractionManager transitions
+        scene: any;
 
         constructor() {
           this.input = {
@@ -89,7 +103,7 @@ vi.mock("phaser", () => {
             body: {},
           }),
         };
-        make = { tilemap: vi.fn().mockReturnValue(mockTilemap) };
+        make = { tilemap: vi.fn() };
         physics = {
           add: {
             collider: vi.fn(),
@@ -125,6 +139,17 @@ describe("GameScene", () => {
 
   it("should initialize MapManager through create", () => {
     gameScene.create({ floorData: mockFloorData as any });
-    expect(gameScene.make.tilemap).toHaveBeenCalled();
+
+    // Check constructor call
+    expect(MapManager).toHaveBeenCalledWith(gameScene);
+
+    // Check method call on the instance
+    const mapManagerInstance = (MapManager as any).mock.results[0].value;
+    expect(mapManagerInstance.init).toHaveBeenCalledWith(mockFloorData);
+  });
+
+  it("should initialize InteractionManager", () => {
+    gameScene.create({ floorData: mockFloorData as any });
+    expect(InteractionManager).toHaveBeenCalled();
   });
 });
