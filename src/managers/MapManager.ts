@@ -73,23 +73,22 @@ export class MapManager {
     this.fovLayer.setDepth(100);
 
     // Set initial visual state based on saved explorationMap
+    this.fovLayer.fill(0);
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
         const state = this.explorationMap[y][x];
-        if (state >= 1) {
-          this.fovLayer.putTileAt(1, x, y);
+        if (state === 0) continue; // Skip unseen tiles
 
-          // Vertical extension logic
-          const tile = this.floorLayer.getTileAt(x, y);
-          if (tile && tile.index === 0 && y > 0) {
-            const tileAboveState = this.explorationMap[y - 1][x];
-            // Only extension if the tile above isn't also revealed
-            if (tileAboveState < 1) {
-              this.fovLayer.putTileAt(1, x, y - 1);
-            }
+        this.fovLayer.putTileAt(1, x, y);
+
+        // Vertical extension logic
+        const tile = this.floorLayer.getTileAt(x, y);
+        if (tile && tile.index === 0 && y > 0) {
+          const tileAboveState = this.explorationMap[y - 1][x];
+          // Only extension if the tile above isn't also revealed
+          if (tileAboveState < 1) {
+            this.fovLayer.putTileAt(1, x, y - 1);
           }
-        } else {
-          this.fovLayer.putTileAt(0, x, y);
         }
       }
     }
