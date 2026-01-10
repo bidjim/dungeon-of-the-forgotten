@@ -32,6 +32,11 @@ export class InteractionManager {
   }
 
   public setupInteractions(): void {
+    // Reset lock when scene shuts down or is destroyed
+    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.isTransitioning = false;
+    });
+
     if (this.currentFloorData.stairs.down) {
       const stairsWorldX =
         this.currentFloorData.stairs.down.x * TILE_SIZE + TILE_SIZE / 2;
