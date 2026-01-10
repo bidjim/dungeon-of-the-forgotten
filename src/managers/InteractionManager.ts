@@ -122,8 +122,8 @@ export class InteractionManager {
 
       floorManager.saveFloorState(
         this.currentFloorData.id,
-        [], // TODO: Integrate with EntityManager
-        [], // TODO: Integrate with ItemManager
+        null, // Preserve existing entities
+        null, // Preserve existing items
         currentExploration
       );
 
