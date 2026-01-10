@@ -75,19 +75,20 @@ export class MapManager {
     for (let y = 0; y < this.map.height; y++) {
       for (let x = 0; x < this.map.width; x++) {
         const state = this.explorationMap[y][x];
-
-        // FIXED: Treat 2 (Visible in previous session) as 1 (Explored)
-        // This prevents the "Pitch Black" bug on reload
         if (state >= 1) {
-          this.fovLayer.putTileAt(1, x, y); // Explored (Dim)
+          this.fovLayer.putTileAt(1, x, y);
 
-          // Initial Vertical Extension for Walls
+          // Vertical extension logic
           const tile = this.floorLayer.getTileAt(x, y);
           if (tile && tile.index === 0 && y > 0) {
-            this.fovLayer.putTileAt(1, x, y - 1);
+            const tileAboveState = this.explorationMap[y - 1][x];
+            // Only extension if the tile above isn't also revealed
+            if (tileAboveState < 1) {
+              this.fovLayer.putTileAt(1, x, y - 1);
+            }
           }
         } else {
-          this.fovLayer.putTileAt(0, x, y); // Unseen (Black)
+          this.fovLayer.putTileAt(0, x, y);
         }
       }
     }
@@ -154,8 +155,8 @@ export class MapManager {
 
     // Pass 2: Apply Vertical Extensions (Wall Tops)
     // We only touch the tile ABOVE a wall here.
-    for (let y = 0; y < this.map.height; y++) {
-      for (let x = 0; x < this.map.width; x++) {
+    for (let y = startY; y <= endY; y++) {
+      for (let x = startX; x <= endX; x++) {
         const tile = this.floorLayer.getTileAt(x, y);
 
         // If this is a wall (Index 0) and we have space above
