@@ -120,28 +120,33 @@ export class InteractionManager {
     if (type === "stair_up" || type === "stair_down") {
       this.isTransitioning = true; // Engage lock
 
-      const floorManager = DungeonManager.getInstance();
+      try {
+        const floorManager = DungeonManager.getInstance();
 
-      // Get live data from manager
-      const currentExploration = this.mapManager.getExplorationMap();
+        // Get live data from manager
+        const currentExploration = this.mapManager.getExplorationMap();
 
-      floorManager.saveFloorState(
-        this.currentFloorData.id,
-        null, // Preserve existing entities
-        null, // Preserve existing items
-        currentExploration
-      );
+        floorManager.saveFloorState(
+          this.currentFloorData.id,
+          null, // Preserve existing entities
+          null, // Preserve existing items
+          currentExploration
+        );
 
-      const newFloor =
-        type === "stair_up"
-          ? Math.max(1, this.currentFloor - 1)
-          : this.currentFloor + 1;
-      const direction = type === "stair_up" ? "up" : "down";
+        const newFloor =
+          type === "stair_up"
+            ? Math.max(1, this.currentFloor - 1)
+            : this.currentFloor + 1;
+        const direction = type === "stair_up" ? "up" : "down";
 
-      this.scene.scene.start("LoadingScene", {
-        floor: newFloor,
-        cameFrom: direction,
-      });
+        this.scene.scene.start("LoadingScene", {
+          floor: newFloor,
+          cameFrom: direction,
+        });
+      } catch (error) {
+        console.error("Transition failed:", error);
+        this.isTransitioning = false; // Release lock on error
+      }
     }
   }
 }
