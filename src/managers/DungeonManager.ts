@@ -99,20 +99,15 @@ class DungeonManager {
    */
   public saveFloorState(
     level: number,
-    entities: EntityState[],
-    items: ItemState[],
+    entities: EntityState[] | null,
+    items: ItemState[] | null,
     exploration: number[][]
   ): void {
     if (this.floors.has(level)) {
       const currentFloor = this.floors.get(level)!;
-      currentFloor.entities = entities;
-      currentFloor.items = items;
+      if (entities) currentFloor.entities = entities;
+      if (items) currentFloor.items = items;
       currentFloor.explorationMap = exploration;
-      console.log(`Saved state for floor ${level}`);
-    } else {
-      console.warn(
-        `Attempted to save state for non-existent floor ${level}. This should not happen if getFloor is called first.`
-      );
     }
   }
 

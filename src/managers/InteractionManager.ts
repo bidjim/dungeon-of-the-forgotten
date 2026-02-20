@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { Player } from "../Player";
 import { DungeonManager } from "./DungeonManager";
 import { FloorData } from "../types/map";
+import { MapManager } from "./MapManager";
 
 const TILE_SIZE = 16; // In pixels
 
@@ -11,7 +12,8 @@ export class InteractionManager {
   private map: Phaser.Tilemaps.Tilemap;
   private currentFloorData: FloorData;
   private currentFloor: number;
-  private explorationMap: number[][];
+  private mapManager: MapManager;
+  private isTransitioning: boolean = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -19,17 +21,22 @@ export class InteractionManager {
     map: Phaser.Tilemaps.Tilemap,
     currentFloorData: FloorData,
     currentFloor: number,
-    explorationMap: number[][]
+    mapManager: MapManager
   ) {
     this.scene = scene;
     this.player = player;
     this.map = map;
     this.currentFloorData = currentFloorData;
     this.currentFloor = currentFloor;
-    this.explorationMap = explorationMap;
+    this.mapManager = mapManager;
   }
 
   public setupInteractions(): void {
+    // Reset lock when scene shuts down or is destroyed
+    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.isTransitioning = false;
+    });
+
     if (this.currentFloorData.stairs.down) {
       const stairsWorldX =
         this.currentFloorData.stairs.down.x * TILE_SIZE + TILE_SIZE / 2;
@@ -86,7 +93,7 @@ export class InteractionManager {
     object.setBodySize(width, height);
     object.setImmovable(true);
     object.setVisible(false);
-    object.setData("type", type); // Store type for overlap handler
+    object.setData("type", type);
     return object;
   }
 
@@ -102,56 +109,44 @@ export class InteractionManager {
       | Phaser.Physics.Arcade.StaticBody
       | Phaser.Tilemaps.Tile
   ): void {
-    // 1. Ensure the first object is the Player
-    if (!(gameObject1 instanceof Player)) return;
+    if (this.isTransitioning) return; // Guard clause
 
-    // 2. Safely check if the second object is a GameObject capable of holding data
+    if (!(gameObject1 instanceof Player)) return;
     if (!(gameObject2 instanceof Phaser.GameObjects.GameObject)) return;
 
     const type = gameObject2.getData("type");
     if (!type) return;
 
-    const floorManager = DungeonManager.getInstance();
+    if (type === "stair_up" || type === "stair_down") {
+      this.isTransitioning = true; // Engage lock
 
-    switch (type) {
-      case "stair_up": {
+      try {
+        const floorManager = DungeonManager.getInstance();
+
+        // Get live data from manager
+        const currentExploration = this.mapManager.getExplorationMap();
+
         floorManager.saveFloorState(
           this.currentFloorData.id,
-          [],
-          [],
-          this.explorationMap
+          null, // Preserve existing entities
+          null, // Preserve existing items
+          currentExploration
         );
-        const newFloor = Math.max(1, this.currentFloor - 1);
+
+        const newFloor =
+          type === "stair_up"
+            ? Math.max(1, this.currentFloor - 1)
+            : this.currentFloor + 1;
+        const direction = type === "stair_up" ? "up" : "down";
+
         this.scene.scene.start("LoadingScene", {
           floor: newFloor,
-          cameFrom: "up",
+          cameFrom: direction,
         });
-        break;
+      } catch (error) {
+        console.error("Transition failed:", error);
+        this.isTransitioning = false; // Release lock on error
       }
-
-      case "stair_down": {
-        floorManager.saveFloorState(
-          this.currentFloorData.id,
-          [],
-          [],
-          this.explorationMap
-        );
-        const newFloor = this.currentFloor + 1;
-        this.scene.scene.start("LoadingScene", {
-          floor: newFloor,
-          cameFrom: "down",
-        });
-        break;
-      }
-
-      case "gate": {
-        // TODO: Implement proper town transition logic
-        console.log("Gate interaction triggered");
-        break;
-      }
-
-      default:
-        break;
     }
   }
 }

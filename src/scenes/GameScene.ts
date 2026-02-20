@@ -20,6 +20,8 @@ export class GameScene extends Phaser.Scene {
   private currentFloorData!: FloorData;
   private mapManager!: MapManager;
   private cameFrom: "up" | "down" | "gate" = "gate";
+  private lastPlayerTileX: number = -1;
+  private lastPlayerTileY: number = -1;
 
   constructor() {
     super("GameScene");
@@ -60,7 +62,7 @@ export class GameScene extends Phaser.Scene {
       map,
       this.currentFloorData,
       this.currentFloorData.id,
-      this.currentFloorData.explorationMap
+      this.mapManager
     );
     interactionManager.setupInteractions();
 
@@ -68,10 +70,27 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.physics.world.bounds.width = map.widthInPixels;
     this.physics.world.bounds.height = map.heightInPixels;
+
+    this.mapManager.updateFOV(this.player.x, this.player.y);
+    this.lastPlayerTileX = Math.floor(this.player.x / TILE_SIZE);
+    this.lastPlayerTileY = Math.floor(this.player.y / TILE_SIZE);
   }
 
   update() {
     this.player?.update();
+
+    const currentTileX = Math.floor(this.player.x / TILE_SIZE);
+    const currentTileY = Math.floor(this.player.y / TILE_SIZE);
+
+    if (
+      currentTileX !== this.lastPlayerTileX ||
+      currentTileY !== this.lastPlayerTileY
+    ) {
+      this.mapManager.updateFOV(this.player.x, this.player.y);
+      this.lastPlayerTileX = currentTileX;
+      this.lastPlayerTileY = currentTileY;
+    }
+
     this.mapManager.updateTransparency(this.player);
   }
 }
